@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import WorksheetPage from "./worksheet-page";
 import type { Dispatch, SetStateAction } from "react";
+import { createRoot } from "react-dom/client";
 
 type WorksheetType = "grid" | "underline";
 
@@ -115,7 +116,8 @@ WorksheetPreviewProps) {
     });
 
     const { render } = await import("react-dom");
-    render(pageRenders, downloadContainer);
+    const root = createRoot(downloadContainer);
+    root.render(pageRenders);
 
     await new Promise((resolve) => setTimeout(resolve, 500)); // wait for render
 
