@@ -96,6 +96,8 @@ WorksheetPreviewProps) {
         `worksheet-page-render-${pageIndex}`
       );
       if (!pageElement) return null;
+      // Add a small delay to ensure fonts and images are loaded
+      await new Promise(resolve => setTimeout(resolve, 50));
       return await html2canvas(pageElement, {
         scale: 3, // Higher scale for better quality
         useCORS: true,
@@ -108,48 +110,63 @@ WorksheetPreviewProps) {
     downloadContainer.style.left = "-9999px";
     document.body.appendChild(downloadContainer);
 
-    const pagesToRender = Array.from({ length: totalPages }, (_, i) => i);
-    const pageRenders = pagesToRender.map((pageIndex) => {
-        const startIndex = pageIndex * sentencesPerPage;
-        const pageSentences = sentences.slice(startIndex, startIndex + sentencesPerPage);
-        return <WorksheetPage key={pageIndex} id={`worksheet-page-render-${pageIndex}`} sentences={pageSentences} pageNumber={pageIndex + 1} totalPages={totalPages} config={worksheetConfig} />;
-    });
-
-    const { render } = await import("react-dom");
     const root = createRoot(downloadContainer);
-    root.render(pageRenders);
-
-    await new Promise((resolve) => setTimeout(resolve, 500)); // wait for render
-
-    const canvases = await Promise.all(
-      pagesToRender.map((i) => getPageCanvas(i))
-    );
     
-    document.body.removeChild(downloadContainer);
-
-    if (type === "pdf") {
-      const { jsPDF } = await import("jspdf");
-      const doc = new jsPDF("p", "mm", "a4");
-      canvases.forEach((canvas, index) => {
-        if (!canvas) return;
-        if (index > 0) doc.addPage();
-        const imgData = canvas.toDataURL("image/jpeg", 0.9);
-        const pdfWidth = doc.internal.pageSize.getWidth();
-        const pdfHeight = doc.internal.pageSize.getHeight();
-        doc.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
+    try {
+      const pagesToRender = Array.from({ length: totalPages }, (_, i) => i);
+      const pageRenders = pagesToRender.map((pageIndex) => {
+          const startIndex = pageIndex * sentencesPerPage;
+          const pageSentences = sentences.slice(startIndex, startIndex + sentencesPerPage);
+          return <WorksheetPage key={pageIndex} id={`worksheet-page-render-${pageIndex}`} sentences={pageSentences} pageNumber={pageIndex + 1} totalPages={totalPages} config={worksheetConfig} />;
       });
-      doc.save("받아쓰기_학습지.pdf");
-    } else {
-      canvases.forEach((canvas, index) => {
-        if (!canvas) return;
-        const link = document.createElement("a");
-        link.download = `받아쓰기_학습지_${index + 1}.png`;
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-      });
+  
+      root.render(pageRenders);
+  
+      // Wait for rendering to complete. Increased timeout to ensure fonts are loaded.
+      await new Promise((resolve) => setTimeout(resolve, 1000)); 
+  
+      const canvases = await Promise.all(
+        pagesToRender.map((i) => getPageCanvas(i))
+      );
+      
+      const validCanvases = canvases.filter(Boolean) as HTMLCanvasElement[];
+      if(validCanvases.length !== totalPages) {
+        console.warn("Some pages could not be rendered to canvas.");
+      }
+      if (validCanvases.length === 0) {
+        console.error("Could not generate any worksheet pages.");
+        // Ideally, we'd show a toast here.
+        return;
+      }
+  
+      if (type === "pdf") {
+        const { jsPDF } = await import("jspdf");
+        const doc = new jsPDF("p", "mm", "a4");
+        validCanvases.forEach((canvas, index) => {
+          if (index > 0) doc.addPage();
+          const imgData = canvas.toDataURL("image/jpeg", 0.9);
+          const pdfWidth = doc.internal.pageSize.getWidth();
+          const pdfHeight = doc.internal.pageSize.getHeight();
+          doc.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
+        });
+        doc.save("받아쓰기_학습지.pdf");
+      } else {
+        validCanvases.forEach((canvas, index) => {
+          const link = document.createElement("a");
+          link.download = `받아쓰기_학습지_${index + 1}.png`;
+          link.href = canvas.toDataURL("image/png");
+          link.click();
+        });
+      }
+    } catch (error) {
+      console.error("Failed to download worksheet:", error);
+      // Ideally, a toast here too.
+    } finally {
+      // Cleanup
+      root.unmount();
+      document.body.removeChild(downloadContainer);
+      setIsDownloading(false);
     }
-
-    setIsDownloading(false);
   };
 
   return (
