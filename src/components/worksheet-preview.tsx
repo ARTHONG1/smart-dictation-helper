@@ -30,7 +30,7 @@ type WorksheetType = "grid" | "underline";
 interface WorksheetConfig {
   type: WorksheetType;
   isPracticeActive: boolean;
-  practiceLines: number;
+  practiceLines: string;
 }
 
 interface WorksheetPreviewProps {
@@ -53,7 +53,8 @@ WorksheetPreviewProps) {
 
   const sentencesPerPage = useMemo(() => {
     const { type, isPracticeActive, practiceLines } = worksheetConfig;
-    const linesPerSentence = 1 + (isPracticeActive ? practiceLines : 0);
+    const practiceLinesNum = parseInt(practiceLines) || 0;
+    const linesPerSentence = 1 + (isPracticeActive ? practiceLinesNum : 0);
 
     if (linesPerSentence <= 0) return sentences.length || 1;
 
@@ -64,7 +65,7 @@ WorksheetPreviewProps) {
       // Assuming a total of 10 items (sentence + practice) fit on an underline page
       return Math.floor(10 / linesPerSentence) || 1;
     }
-  }, [worksheetConfig]);
+  }, [worksheetConfig, sentences.length]);
 
   const totalPages = useMemo(() => {
     if (sentences.length === 0) return 1;
@@ -218,7 +219,7 @@ WorksheetPreviewProps) {
               onChange={(e) =>
                 setWorksheetConfig({
                   ...worksheetConfig,
-                  practiceLines: parseInt(e.target.value) || 1,
+                  practiceLines: e.target.value,
                 })
               }
               disabled={!worksheetConfig.isPracticeActive}

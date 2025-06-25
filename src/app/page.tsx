@@ -56,13 +56,13 @@ export default function Home() {
     gradeLevel: "1",
     dictationGoal: "받침 있는 글자",
     difficultyLevel: "보통",
-    sentenceCount: 5,
+    sentenceCount: "5",
   });
 
   const [worksheetConfig, setWorksheetConfig] = useState({
     type: "grid" as WorksheetType,
     isPracticeActive: true,
-    practiceLines: 1,
+    practiceLines: "1",
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -112,7 +112,7 @@ export default function Home() {
     const result = await getAiSentences({
       ...aiConfig,
       gradeLevel: parseInt(aiConfig.gradeLevel),
-      sentenceCount: aiConfig.sentenceCount,
+      sentenceCount: parseInt(aiConfig.sentenceCount) || 1,
     });
     if (result.success && result.sentences) {
       setSentences(result.sentences);
@@ -224,7 +224,7 @@ export default function Home() {
                       onChange={(e) =>
                         setAiConfig({
                           ...aiConfig,
-                          sentenceCount: parseInt(e.target.value) || 1,
+                          sentenceCount: e.target.value,
                         })
                       }
                     />

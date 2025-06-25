@@ -8,7 +8,7 @@ type WorksheetType = "grid" | "underline";
 interface WorksheetConfig {
   type: WorksheetType;
   isPracticeActive: boolean;
-  practiceLines: number;
+  practiceLines: string;
 }
 
 interface WorksheetPageProps {
@@ -56,6 +56,7 @@ const GridSentence = ({
   sentenceNumber: number;
 }) => {
   const characters = sentence.padEnd(11, "").split("");
+  const practiceLinesNum = parseInt(config.practiceLines) || 0;
 
   return (
     <div className="space-y-1">
@@ -65,7 +66,7 @@ const GridSentence = ({
         sentenceNumber={sentenceNumber}
       />
       {config.isPracticeActive &&
-        Array.from({ length: config.practiceLines }).map((_, i) => (
+        Array.from({ length: practiceLinesNum }).map((_, i) => (
           <GridRow
             key={`practice-grid-${i}`}
             chars={Array(11).fill("")}
@@ -104,6 +105,7 @@ const UnderlineSentence = ({
   config: WorksheetConfig;
   sentenceNumber: number;
 }) => {
+  const practiceLinesNum = parseInt(config.practiceLines) || 0;
   return (
     <div className="space-y-1">
       <UnderlineRow
@@ -112,7 +114,7 @@ const UnderlineSentence = ({
         sentenceNumber={sentenceNumber}
       />
       {config.isPracticeActive &&
-        Array.from({ length: config.practiceLines }).map((_, i) => (
+        Array.from({ length: practiceLinesNum }).map((_, i) => (
           <UnderlineRow
             key={`practice-line-${i}`}
             text={null}
@@ -163,7 +165,7 @@ export default function WorksheetPage({
                 Math.floor(
                   config.type === "grid"
                     ? 15
-                    : 10 / (1 + (config.isPracticeActive ? config.practiceLines : 0))
+                    : 10 / (1 + (config.isPracticeActive ? (parseInt(config.practiceLines) || 0) : 0))
                 ) +
               index +
               1;
