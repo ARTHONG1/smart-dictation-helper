@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 type WorksheetType = "grid" | "underline";
@@ -130,6 +131,13 @@ export default function WorksheetPage({
   config,
   isPreview = false,
 }: WorksheetPageProps) {
+  const [currentDate, setCurrentDate] = useState("");
+
+  useEffect(() => {
+    // This will only run on the client, after initial hydration
+    setCurrentDate(new Date().toLocaleDateString("ko-KR"));
+  }, []); // Empty dependency array ensures this runs once on mount
+
   return (
     <div
       id={id}
@@ -144,7 +152,7 @@ export default function WorksheetPage({
         <header className="text-center mb-6">
           <h2 className="text-4xl font-bold font-display">받아쓰기 시험</h2>
           <div className="flex justify-between items-end mt-4 text-lg">
-            <span>{new Date().toLocaleDateString("ko-KR")}</span>
+            <span>{currentDate}</span>
             <span>이름: ______________</span>
           </div>
         </header>
