@@ -40,9 +40,12 @@ const GridRow = ({
       {chars.map((char, i) => (
         <div
           key={i}
-          className="aspect-square bg-white border-r border-b border-gray-400 grid place-items-center"
+          className="aspect-square bg-white border-r border-b border-gray-400 text-center"
         >
-          <span className="text-2xl font-display">{char}</span>
+          <span className="inline-block h-full align-middle" />
+          <span className="inline-block text-2xl font-display align-middle">
+            {char}
+          </span>
         </div>
       ))}
     </div>
