@@ -1,19 +1,15 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState } from "react";
 import {
   Sparkles,
   Pencil,
   Trash2,
-  FileText,
-  Image as ImageIcon,
-  RefreshCw,
   Loader2,
-  ChevronLeft,
-  ChevronRight,
   BookOpen,
+  Volume2,
 } from "lucide-react";
-import { getAiSentences } from "./actions";
+import { getAiSentences, getAudioForSentence } from "./actions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -34,8 +30,6 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import WorksheetPreview from "@/components/worksheet-preview";
 
@@ -45,6 +39,9 @@ export default function Home() {
   const { toast } = useToast();
   const [sentences, setSentences] = useState<string[]>([]);
   const [manualInput, setManualInput] = useState("");
+  const [audioLoadingIndex, setAudioLoadingIndex] = useState<number | null>(null);
+  const [audioCache, setAudioCache] = useState<Record<string, string>>({});
+
 
   const [aiConfig, setAiConfig] = useState({
     gradeLevel: "1",
@@ -60,7 +57,6 @@ export default function Home() {
   });
 
   const [isLoading, setIsLoading] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
 
   const handleSentenceChange = (index: number, value: string) => {
     if (value.length > 11) {
@@ -101,6 +97,41 @@ export default function Home() {
     setSentences((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handlePlayAudio = async (sentence: string, index: number) => {
+    if (audioLoadingIndex !== null) return;
+  
+    if (audioCache[sentence]) {
+      const audio = new Audio(audioCache[sentence]);
+      audio.play();
+      return;
+    }
+  
+    setAudioLoadingIndex(index);
+    try {
+      const result = await getAudioForSentence(sentence);
+      if (result.success && result.audioData) {
+        setAudioCache(prev => ({ ...prev, [sentence]: result.audioData! }));
+        const audio = new Audio(result.audioData);
+        audio.play();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "오류",
+          description: result.error || "오디오를 재생할 수 없습니다.",
+        });
+      }
+    } catch (error) {
+      console.error("Audio playback error:", error);
+      toast({
+        variant: "destructive",
+        title: "오류",
+        description: "오디오를 재생하는 중 문제가 발생했습니다.",
+      });
+    } finally {
+      setAudioLoadingIndex(null);
+    }
+  };
+
   const handleAiGenerate = async () => {
     setIsLoading(true);
     const result = await getAiSentences({
@@ -126,6 +157,18 @@ export default function Home() {
 
   const handleReset = () => {
     setSentences([]);
+    setManualInput('');
+    setAiConfig({
+      gradeLevel: "1",
+      dictationGoal: "받침 있는 글자",
+      difficultyLevel: "보통",
+      sentenceCount: "5",
+    });
+    setWorksheetConfig({
+      type: "grid" as WorksheetType,
+      isPracticeActive: true,
+      practiceLines: "1",
+    })
   };
 
   return (
@@ -140,7 +183,6 @@ export default function Home() {
       </header>
 
       <main className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
-        {/* Left Panel */}
         <div className="flex flex-col gap-6">
           <Tabs defaultValue="ai" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
@@ -286,7 +328,21 @@ export default function Home() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        onClick={() => handlePlayAudio(sentence, index)}
+                        disabled={audioLoadingIndex === index}
+                        title="문장 듣기"
+                      >
+                        {audioLoadingIndex === index ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Volume2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleDeleteSentence(index)}
+                        title="문장 삭제"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -302,25 +358,23 @@ export default function Home() {
           </Card>
         </div>
 
-        {/* Right Panel */}
         <div className="sticky top-8 self-start">
           <WorksheetPreview
             sentences={sentences}
             worksheetConfig={worksheetConfig}
             setWorksheetConfig={setWorksheetConfig}
-            isDownloading={isDownloading}
           />
         </div>
       </main>
 
-      <footer className="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4 max-w-7xl mx-auto">
+      <footer className="mt-8 flex justify-center items-center gap-4 max-w-7xl mx-auto">
         <Button
           onClick={handleReset}
-          variant="outline"
+          variant="destructive"
           size="lg"
           className="w-full sm:w-auto"
         >
-          <RefreshCw className="mr-2 h-4 w-4" /> 새로고침
+          처음부터 다시하기
         </Button>
       </footer>
     </div>

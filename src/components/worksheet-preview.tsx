@@ -4,7 +4,6 @@ import { useState, useMemo } from "react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -37,15 +36,13 @@ interface WorksheetPreviewProps {
   sentences: string[];
   worksheetConfig: WorksheetConfig;
   setWorksheetConfig: Dispatch<SetStateAction<WorksheetConfig>>;
-  isDownloading: boolean;
 }
 
 export default function WorksheetPreview({
   sentences,
   worksheetConfig,
   setWorksheetConfig,
-}: // isDownloading and setIsDownloading will be managed here for downloads
-WorksheetPreviewProps) {
+}: WorksheetPreviewProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [isDownloading, setIsDownloading] = useState<"pdf" | "image" | false>(
     false
@@ -53,16 +50,14 @@ WorksheetPreviewProps) {
 
   const sentencesPerPage = useMemo(() => {
     const { type, isPracticeActive, practiceLines } = worksheetConfig;
-    const practiceLinesNum = parseInt(practiceLines) || 0;
+    const practiceLinesNum = parseInt(practiceLines, 10) || 0;
     const linesPerSentence = 1 + (isPracticeActive ? practiceLinesNum : 0);
 
     if (linesPerSentence <= 0) return sentences.length || 1;
 
     if (type === "grid") {
-      // Assuming a total of 15 rows fit on a grid page
       return Math.floor(15 / linesPerSentence) || 1;
     } else {
-      // Assuming a total of 10 items (sentence + practice) fit on an underline page
       return Math.floor(10 / linesPerSentence) || 1;
     }
   }, [worksheetConfig, sentences.length]);
@@ -97,10 +92,9 @@ WorksheetPreviewProps) {
         `worksheet-page-render-${pageIndex}`
       );
       if (!pageElement) return null;
-      // Add a small delay to ensure fonts and images are loaded
       await new Promise(resolve => setTimeout(resolve, 50));
       return await html2canvas(pageElement, {
-        scale: 3, // Higher scale for better quality
+        scale: 3,
         useCORS: true,
         backgroundColor: "#ffffff",
       });
@@ -123,7 +117,6 @@ WorksheetPreviewProps) {
   
       root.render(pageRenders);
   
-      // Wait for rendering to complete. Increased timeout to ensure fonts are loaded.
       await new Promise((resolve) => setTimeout(resolve, 1000)); 
   
       const canvases = await Promise.all(
@@ -136,7 +129,6 @@ WorksheetPreviewProps) {
       }
       if (validCanvases.length === 0) {
         console.error("Could not generate any worksheet pages.");
-        // Ideally, we'd show a toast here.
         return;
       }
   
@@ -161,9 +153,7 @@ WorksheetPreviewProps) {
       }
     } catch (error) {
       console.error("Failed to download worksheet:", error);
-      // Ideally, a toast here too.
     } finally {
-      // Cleanup
       root.unmount();
       document.body.removeChild(downloadContainer);
       setIsDownloading(false);
@@ -212,15 +202,18 @@ WorksheetPreviewProps) {
               <Label htmlFor="practice">연습 공간 추가</Label>
             </div>
             <Input
-              type="number"
-              min="1"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               className="w-20"
               value={worksheetConfig.practiceLines}
-              onChange={(e) =>
-                setWorksheetConfig({
-                  ...worksheetConfig,
-                  practiceLines: e.target.value,
-                })
+              onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9]/g, '');
+                  setWorksheetConfig({
+                    ...worksheetConfig,
+                    practiceLines: value,
+                  })
+                }
               }
               disabled={!worksheetConfig.isPracticeActive}
             />
