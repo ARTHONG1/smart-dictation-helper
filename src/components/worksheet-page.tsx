@@ -39,7 +39,7 @@ const GridRow = ({
       {chars.map((char, i) => (
         <div
           key={i}
-          className="grid place-items-center aspect-square bg-white text-2xl font-display border-r border-b border-gray-400"
+          className="flex items-center justify-center aspect-square bg-white text-2xl font-display border-r border-b border-gray-400"
         >
           {char}
         </div>
@@ -167,7 +167,7 @@ export default function WorksheetPage({
     <div
       id={id}
       className={cn(
-        "bg-white text-black font-body p-[1.5cm]",
+        "bg-white text-black font-body p-[1.5cm] font-display",
         isPreview
           ? "aspect-[210/297] w-full shadow-lg"
           : "w-[210mm] h-[297mm]"

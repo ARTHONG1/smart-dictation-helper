@@ -23,6 +23,7 @@ import {
 import WorksheetPage from "./worksheet-page";
 import type { Dispatch, SetStateAction } from "react";
 import { createRoot } from "react-dom/client";
+import { useToast } from "@/hooks/use-toast";
 
 type WorksheetType = "grid" | "underline";
 
@@ -43,6 +44,7 @@ export default function WorksheetPreview({
   worksheetConfig,
   setWorksheetConfig,
 }: WorksheetPreviewProps) {
+  const { toast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const [isDownloading, setIsDownloading] = useState<"pdf" | "image" | false>(
     false
@@ -68,10 +70,13 @@ export default function WorksheetPreview({
   }, [sentences.length, sentencesPerPage]);
 
   const currentSentences = useMemo(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
     const startIndex = (currentPage - 1) * sentencesPerPage;
     const endIndex = startIndex + sentencesPerPage;
     return sentences.slice(startIndex, endIndex);
-  }, [currentPage, sentences, sentencesPerPage]);
+  }, [currentPage, sentences, sentencesPerPage, totalPages]);
 
   const handlePageChange = (direction: "next" | "prev") => {
     if (direction === "next" && currentPage < totalPages) {
@@ -86,56 +91,57 @@ export default function WorksheetPreview({
     setIsDownloading(type);
 
     const { default: html2canvas } = await import("html2canvas");
-
-    const getPageCanvas = async (pageIndex: number) => {
-      const pageElement = document.getElementById(
-        `worksheet-page-render-${pageIndex}`
-      );
-      if (!pageElement) return null;
-      await new Promise(resolve => setTimeout(resolve, 50));
-      return await html2canvas(pageElement, {
-        scale: 3,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-      });
-    };
-
+    
     const downloadContainer = document.createElement("div");
     downloadContainer.style.position = "absolute";
     downloadContainer.style.left = "-9999px";
+    downloadContainer.style.width = "210mm"; 
     document.body.appendChild(downloadContainer);
 
     const root = createRoot(downloadContainer);
-    
+    const canvases: HTMLCanvasElement[] = [];
+
     try {
-      const pagesToRender = Array.from({ length: totalPages }, (_, i) => i);
-      const pageRenders = pagesToRender.map((pageIndex) => {
-          const startIndex = pageIndex * sentencesPerPage;
-          const pageSentences = sentences.slice(startIndex, startIndex + sentencesPerPage);
-          return <WorksheetPage key={pageIndex} id={`worksheet-page-render-${pageIndex}`} sentences={pageSentences} pageNumber={pageIndex + 1} totalPages={totalPages} config={worksheetConfig} />;
-      });
-  
-      root.render(pageRenders);
-  
-      await new Promise((resolve) => setTimeout(resolve, 1000)); 
-  
-      const canvases = await Promise.all(
-        pagesToRender.map((i) => getPageCanvas(i))
-      );
+      for (let i = 0; i < totalPages; i++) {
+        const pageIndex = i;
+        const startIndex = pageIndex * sentencesPerPage;
+        const pageSentences = sentences.slice(
+          startIndex,
+          startIndex + sentencesPerPage
+        );
+
+        root.render(
+          <WorksheetPage
+            key={pageIndex}
+            id={`worksheet-page-render-${pageIndex}`}
+            sentences={pageSentences}
+            pageNumber={pageIndex + 1}
+            totalPages={totalPages}
+            config={worksheetConfig}
+          />
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        const pageElement = downloadContainer.firstChild as HTMLElement;
+        if (pageElement) {
+          const canvas = await html2canvas(pageElement, {
+            scale: 3,
+            useCORS: true,
+            backgroundColor: "#ffffff",
+          });
+          canvases.push(canvas);
+        }
+      }
+
+      if (canvases.length !== totalPages) {
+        throw new Error("모든 페이지를 렌더링하는데 실패했습니다.");
+      }
       
-      const validCanvases = canvases.filter(Boolean) as HTMLCanvasElement[];
-      if(validCanvases.length !== totalPages) {
-        console.warn("Some pages could not be rendered to canvas.");
-      }
-      if (validCanvases.length === 0) {
-        console.error("Could not generate any worksheet pages.");
-        return;
-      }
-  
       if (type === "pdf") {
         const { jsPDF } = await import("jspdf");
         const doc = new jsPDF("p", "mm", "a4");
-        validCanvases.forEach((canvas, index) => {
+        canvases.forEach((canvas, index) => {
           if (index > 0) doc.addPage();
           const imgData = canvas.toDataURL("image/jpeg", 0.9);
           const pdfWidth = doc.internal.pageSize.getWidth();
@@ -144,21 +150,29 @@ export default function WorksheetPreview({
         });
         doc.save("받아쓰기_학습지.pdf");
       } else {
-        validCanvases.forEach((canvas, index) => {
+        for (let i = 0; i < canvases.length; i++) {
+          const canvas = canvases[i];
           const link = document.createElement("a");
-          link.download = `받아쓰기_학습지_${index + 1}.png`;
+          link.download = `받아쓰기_학습지_${i + 1}.png`;
           link.href = canvas.toDataURL("image/png");
           link.click();
-        });
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
       }
     } catch (error) {
       console.error("Failed to download worksheet:", error);
+      toast({
+        variant: "destructive",
+        title: "다운로드 실패",
+        description: "학습지를 다운로드하는 중 오류가 발생했습니다.",
+      });
     } finally {
       root.unmount();
       document.body.removeChild(downloadContainer);
       setIsDownloading(false);
     }
   };
+
 
   return (
     <Card>
