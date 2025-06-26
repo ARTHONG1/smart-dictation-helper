@@ -11,7 +11,7 @@ import {
   RefreshCw,
   Globe,
 } from "lucide-react";
-import { getAiSentences, getAudioForSentence } from "./actions";
+import { getAiSentences, getAudioForSentence, getEnglishAiSentences } from "./actions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -60,6 +60,7 @@ export default function Home() {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isEnglishLoading, setIsEnglishLoading] = useState(false);
 
   const handleSentenceChange = (index: number, value: string) => {
     if (value.length > 11) {
@@ -156,6 +157,29 @@ export default function Home() {
       });
     }
     setIsLoading(false);
+  };
+  
+  const handleEnglishAiGenerate = async () => {
+    setIsEnglishLoading(true);
+    const result = await getEnglishAiSentences({
+      ...aiConfig,
+      gradeLevel: parseInt(aiConfig.gradeLevel),
+      sentenceCount: parseInt(aiConfig.sentenceCount) || 1,
+    });
+    if (result.success && result.sentences) {
+      setSentences(result.sentences);
+      toast({
+        title: "성공",
+        description: "AI가 영어 문장을 성공적으로 생성했습니다!",
+      });
+    } else {
+      toast({
+        variant: "destructive",
+        title: "오류",
+        description: result.error,
+      });
+    }
+    setIsEnglishLoading(false);
   };
 
   const handleReset = () => {
@@ -285,7 +309,7 @@ export default function Home() {
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col gap-2">
-                  <Button onClick={handleAiGenerate} disabled={isLoading} className="w-full">
+                  <Button onClick={handleAiGenerate} disabled={isLoading || isEnglishLoading} className="w-full">
                     {isLoading ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
@@ -293,8 +317,12 @@ export default function Home() {
                     )}
                     AI 문장 자동 생성
                   </Button>
-                  <Button disabled className="w-full" variant="secondary">
-                    <Globe className="mr-2 h-4 w-4" />
+                  <Button onClick={handleEnglishAiGenerate} disabled={isLoading || isEnglishLoading} className="w-full" variant="secondary">
+                     {isEnglishLoading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Globe className="mr-2 h-4 w-4" />
+                    )}
                     영어 특화 AI 문장 자동 생성
                   </Button>
                 </CardFooter>
