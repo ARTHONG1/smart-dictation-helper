@@ -21,7 +21,7 @@ export type GenerateEnglishDictationSentencesInput = z.infer<typeof GenerateEngl
 
 const GenerateEnglishDictationSentencesOutputSchema = z.object({
   sentences: z.array(
-    z.string().max(11).describe('A generated English dictation sentence (maximum 11 characters).')
+    z.string().max(11).describe('A generated English sentence. IMPORTANT: It MUST NOT exceed 11 characters, including spaces and punctuation.')
   ).describe('The list of generated English dictation sentences.'),
 });
 export type GenerateEnglishDictationSentencesOutput = z.infer<typeof GenerateEnglishDictationSentencesOutputSchema>;
@@ -36,22 +36,23 @@ const prompt = ai.definePrompt({
   name: 'generateEnglishDictationSentencesPrompt',
   input: {schema: GenerateEnglishDictationSentencesInputSchema},
   output: {schema: GenerateEnglishDictationSentencesOutputSchema},
-  prompt: `You are an AI assistant helping elementary school teachers generate English dictation sentences.
+  prompt: `You are an AI assistant for elementary school teachers. Your task is to generate short English sentences for dictation tests.
 
-  Generate {{sentenceCount}} English dictation sentences for grade {{gradeLevel}} students.
-  The English dictation goal is: {{englishDictationGoal}}.
-  The difficulty level is: {{difficultyLevel}}.
+Follow these rules STRICTLY:
+1.  Generate {{sentenceCount}} sentences for {{gradeLevel}} grade students.
+2.  The topic is "{{englishDictationGoal}}".
+3.  The difficulty is "{{difficultyLevel}}".
+4.  **THE ABSOLUTE MAXIMUM LENGTH for each sentence is 11 characters.** This includes all letters, spaces, and punctuation. Any sentence longer than 11 characters is invalid.
 
-  **IMPORTANT: Each sentence MUST be 11 characters or less.**
-  This character limit includes spaces and all punctuation.
-  For example, the sentence "I see a cat." is 12 characters long and is **invalid**.
-  The sentence "I see a bug." is 11 characters long and is **valid**.
+Here are examples of length calculation:
+- "I see a bug." is 11 characters long. This is VALID.
+- "I see a cat." is 12 characters long. This is INVALID.
+- "A red dog." is 10 characters long. This is VALID.
+- "It is a cat" is 11 characters long. This is VALID.
 
-  The sentences should be simple, grammatically correct, and appropriate for the specified grade level.
-  The sentences should be based on the dictation goal (e.g., specific phonics rules, sight words).
-  The sentences should match the specified difficulty level, using vocabulary appropriate for that level.
+Before you provide the final JSON output, you MUST double-check every single sentence to ensure it is 11 characters or less. If any sentence is longer, you must shorten it or create a new one that fits the length constraint.
 
-  Return the sentences as a JSON object with a "sentences" key containing an array of strings.
+Return ONLY a JSON object with a "sentences" key containing an array of the generated strings.
   `,
 });
 
