@@ -59,7 +59,7 @@ export default function WorksheetPreview({
     if (linesPerSentence <= 0) return sentences.length || 1;
 
     if (type === "grid") {
-      return Math.floor(12 / linesPerSentence) || 1;
+      return Math.floor(10 / linesPerSentence) || 1;
     } else {
       return Math.floor(10 / linesPerSentence) || 1;
     }
@@ -83,28 +83,28 @@ export default function WorksheetPreview({
     if (direction === "next" && currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
     } else if (direction === "prev" && currentPage > 1) {
-      setCurrentPage(currentPage + 1);
+      setCurrentPage(currentPage - 1);
     }
   };
 
   const handleDownload = async (type: "pdf" | "image") => {
     if (sentences.length === 0) return;
     setIsDownloading(type);
-  
+
     const { default: html2canvas } = await import("html2canvas");
-    
+
     const downloadContainer = document.createElement("div");
     downloadContainer.style.position = "absolute";
     downloadContainer.style.left = "-9999px";
-    downloadContainer.style.width = "210mm"; 
+    downloadContainer.style.width = "210mm";
     document.body.appendChild(downloadContainer);
-  
+
     const root = createRoot(downloadContainer);
     const canvases: HTMLCanvasElement[] = [];
-  
+
     try {
       await document.fonts.ready;
-  
+
       for (let i = 0; i < totalPages; i++) {
         const pageIndex = i;
         const startIndex = pageIndex * sentencesPerPage;
@@ -112,8 +112,7 @@ export default function WorksheetPreview({
           startIndex,
           startIndex + sentencesPerPage
         );
-  
-        // Each page is rendered and captured sequentially
+
         await new Promise<void>((resolve, reject) => {
           root.render(
             <WorksheetPage
@@ -126,8 +125,7 @@ export default function WorksheetPreview({
               isForDownload={true}
             />
           );
-  
-          // Give the browser a moment to render fonts and layout
+
           setTimeout(async () => {
             try {
               const pageElement = downloadContainer.firstChild as HTMLElement;
@@ -148,11 +146,11 @@ export default function WorksheetPreview({
           }, 100);
         });
       }
-  
+
       if (canvases.length !== totalPages) {
         throw new Error("Failed to render all pages.");
       }
-      
+
       if (type === "pdf") {
         const { jsPDF } = await import("jspdf");
         const doc = new jsPDF("p", "mm", "a4");
@@ -171,7 +169,7 @@ export default function WorksheetPreview({
           link.download = `받아쓰기_학습지_${i + 1}.png`;
           link.href = canvas.toDataURL("image/png");
           link.click();
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
       }
     } catch (error) {
