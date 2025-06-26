@@ -103,7 +103,6 @@ export default function WorksheetPreview({
     const canvases: HTMLCanvasElement[] = [];
 
     try {
-      // Wait for all fonts on the page to be loaded and ready.
       await document.fonts.ready;
 
       for (let i = 0; i < totalPages; i++) {
@@ -124,9 +123,9 @@ export default function WorksheetPreview({
                 pageNumber={pageIndex + 1}
                 totalPages={totalPages}
                 config={worksheetConfig}
+                isForDownload={true}
               />
             );
-            // A short delay to allow the browser to paint the newly rendered DOM
             setTimeout(async () => {
               try {
                 const pageElement = downloadContainer.firstChild as HTMLElement;

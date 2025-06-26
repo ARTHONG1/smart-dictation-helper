@@ -19,6 +19,7 @@ interface WorksheetPageProps {
   totalPages: number;
   config: WorksheetConfig;
   isPreview?: boolean;
+  isForDownload?: boolean;
 }
 
 const GridRow = ({
@@ -26,11 +27,13 @@ const GridRow = ({
   isPractice,
   sentenceNumber,
   rowKey,
+  isForDownload,
 }: {
   chars: string[];
   isPractice: boolean;
   sentenceNumber?: number;
   rowKey: string;
+  isForDownload?: boolean;
 }) => (
   <div key={rowKey} className="flex items-center">
     <div className="w-8 text-center font-bold text-lg flex items-center justify-center">
@@ -40,10 +43,14 @@ const GridRow = ({
       {chars.map((char, i) => (
         <div
           key={i}
-          className="aspect-square bg-white border-r border-b border-gray-400 text-center"
+          className="aspect-square bg-white border-r border-b border-gray-400 flex items-center justify-center"
         >
-          <span className="inline-block h-full align-middle" />
-          <span className="inline-block text-2xl font-display align-middle">
+          <span
+            className={cn(
+              "text-2xl font-display",
+              isForDownload && "relative -top-1"
+            )}
+          >
             {char}
           </span>
         </div>
@@ -56,10 +63,12 @@ const GridSentence = ({
   sentence,
   config,
   sentenceNumber,
+  isForDownload,
 }: {
   sentence: string;
   config: WorksheetConfig;
   sentenceNumber: number;
+  isForDownload?: boolean;
 }) => {
   const characters = sentence.padEnd(11, "").split("");
   const practiceLinesNum = parseInt(config.practiceLines) || 0;
@@ -71,6 +80,7 @@ const GridSentence = ({
         isPractice={false}
         sentenceNumber={sentenceNumber}
         rowKey={`sentence-${sentenceNumber}`}
+        isForDownload={isForDownload}
       />
       {config.isPracticeActive &&
         Array.from({ length: practiceLinesNum }).map((_, i) => (
@@ -79,6 +89,7 @@ const GridSentence = ({
             chars={Array(11).fill("")}
             isPractice={true}
             rowKey={`practice-grid-${sentenceNumber}-${i}`}
+            isForDownload={isForDownload}
           />
         ))}
     </div>
@@ -144,6 +155,7 @@ export default function WorksheetPage({
   totalPages,
   config,
   isPreview = false,
+  isForDownload = false,
 }: WorksheetPageProps) {
   const [currentDate, setCurrentDate] = useState("");
 
@@ -194,6 +206,7 @@ export default function WorksheetPage({
                   sentence={sentence}
                   config={config}
                   sentenceNumber={sentenceNumber}
+                  isForDownload={isForDownload}
                 />
               );
             }
