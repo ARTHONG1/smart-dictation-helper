@@ -24,22 +24,26 @@ const GridRow = ({
   chars,
   isPractice,
   sentenceNumber,
+  rowKey,
 }: {
   chars: string[];
   isPractice: boolean;
   sentenceNumber?: number;
+  rowKey: string;
 }) => (
-  <div className="flex items-center">
-    <div className="w-8 text-center font-bold text-lg">
+  <div key={rowKey} className="flex items-center">
+    <div className="w-8 text-center font-bold text-lg flex items-center justify-center">
       {!isPractice && `${sentenceNumber}.`}
     </div>
     <div className="grid grid-cols-11 gap-px border-l border-t border-gray-400 bg-gray-400 flex-1">
       {chars.map((char, i) => (
         <div
           key={i}
-          className="aspect-square bg-white flex items-center justify-center text-2xl font-display border-r border-b border-gray-400"
+          className="relative aspect-square bg-white text-2xl font-display border-r border-b border-gray-400"
         >
-          {char}
+          <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            {char}
+          </span>
         </div>
       ))}
     </div>
@@ -64,13 +68,15 @@ const GridSentence = ({
         chars={characters}
         isPractice={false}
         sentenceNumber={sentenceNumber}
+        rowKey={`sentence-${sentenceNumber}`}
       />
       {config.isPracticeActive &&
         Array.from({ length: practiceLinesNum }).map((_, i) => (
           <GridRow
-            key={`practice-grid-${i}`}
+            key={`practice-grid-${sentenceNumber}-${i}`}
             chars={Array(11).fill("")}
             isPractice={true}
+            rowKey={`practice-grid-${sentenceNumber}-${i}`}
           />
         ))}
     </div>
@@ -81,13 +87,15 @@ const UnderlineRow = ({
   text,
   isPractice,
   sentenceNumber,
+  rowKey,
 }: {
   text: string | null;
   isPractice: boolean;
   sentenceNumber?: number;
+  rowKey: string;
 }) => (
-  <div className="flex items-center h-12">
-    <div className="w-10 text-center font-bold text-lg">
+  <div key={rowKey} className="flex items-center h-12">
+    <div className="w-10 text-center font-bold text-lg flex items-center justify-center">
       {!isPractice && `${sentenceNumber}.`}
     </div>
     <div className="flex-1 border-b-2 border-gray-400 h-full flex items-end pb-1">
@@ -112,13 +120,15 @@ const UnderlineSentence = ({
         text={sentence}
         isPractice={false}
         sentenceNumber={sentenceNumber}
+        rowKey={`underline-sentence-${sentenceNumber}`}
       />
       {config.isPracticeActive &&
         Array.from({ length: practiceLinesNum }).map((_, i) => (
           <UnderlineRow
-            key={`practice-line-${i}`}
+            key={`practice-line-${sentenceNumber}-${i}`}
             text={null}
             isPractice={true}
+            rowKey={`practice-line-${sentenceNumber}-${i}`}
           />
         ))}
     </div>
@@ -179,7 +189,7 @@ export default function WorksheetPage({
             if (config.type === "grid") {
               return (
                 <GridSentence
-                  key={index}
+                  key={`${sentence}-${index}`}
                   sentence={sentence}
                   config={config}
                   sentenceNumber={sentenceNumber}
@@ -188,7 +198,7 @@ export default function WorksheetPage({
             }
             return (
               <UnderlineSentence
-                key={index}
+                key={`${sentence}-${index}`}
                 sentence={sentence}
                 config={config}
                 sentenceNumber={sentenceNumber}
