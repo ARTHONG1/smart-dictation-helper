@@ -38,7 +38,7 @@ const GridRow = ({
       {chars.map((char, i) => (
         <div
           key={i}
-          className="aspect-square bg-white flex items-center justify-center text-2xl font-body leading-none border-r border-b border-gray-400"
+          className="aspect-square bg-white grid place-items-center text-2xl font-display border-r border-b border-gray-400"
         >
           {char}
         </div>
@@ -92,7 +92,7 @@ const UnderlineRow = ({
       {!isPractice && `${sentenceNumber}.`}
     </div>
     <div className="flex-1 border-b-2 border-gray-400 h-full flex items-end pb-1">
-      <span className="text-2xl font-body tracking-widest">{text}</span>
+      <span className="text-2xl font-display tracking-widest">{text}</span>
     </div>
   </div>
 );
