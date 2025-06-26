@@ -40,11 +40,9 @@ const GridRow = ({
       {chars.map((char, i) => (
         <div
           key={i}
-          className="relative aspect-square bg-white border-r border-b border-gray-400"
+          className="aspect-square bg-white border-r border-b border-gray-400 grid place-items-center"
         >
-          <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl font-display">
-            {char}
-          </span>
+          <span className="text-2xl font-display">{char}</span>
         </div>
       ))}
     </div>
@@ -169,7 +167,7 @@ export default function WorksheetPage({
     <div
       id={id}
       className={cn(
-        "bg-white text-black font-body p-[1.5cm] font-display",
+        "bg-white text-black font-body p-[1.5cm]",
         isPreview
           ? "aspect-[210/297] w-full shadow-lg"
           : "w-[210mm] h-[297mm]"

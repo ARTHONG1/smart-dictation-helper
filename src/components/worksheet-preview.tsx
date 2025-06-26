@@ -114,30 +114,41 @@ export default function WorksheetPreview({
           startIndex + sentencesPerPage
         );
 
-        await new Promise<void>((resolve) => {
-          root.render(
-            <WorksheetPage
-              key={pageIndex}
-              id={`worksheet-page-render-${pageIndex}`}
-              sentences={pageSentences}
-              pageNumber={pageIndex + 1}
-              totalPages={totalPages}
-              config={worksheetConfig}
-            />
-          );
-          // Small delay to ensure React renders the component
-          setTimeout(resolve, 100);
+        await new Promise<void>(async (resolve, reject) => {
+          try {
+            root.render(
+              <WorksheetPage
+                key={pageIndex}
+                id={`worksheet-page-render-${pageIndex}`}
+                sentences={pageSentences}
+                pageNumber={pageIndex + 1}
+                totalPages={totalPages}
+                config={worksheetConfig}
+              />
+            );
+            // A short delay to allow the browser to paint the newly rendered DOM
+            setTimeout(async () => {
+              try {
+                const pageElement = downloadContainer.firstChild as HTMLElement;
+                if (pageElement) {
+                  const canvas = await html2canvas(pageElement, {
+                    scale: 3,
+                    useCORS: true,
+                    backgroundColor: "#ffffff",
+                  });
+                  canvases.push(canvas);
+                  resolve();
+                } else {
+                  reject(new Error(`Page element for page ${i + 1} not found.`));
+                }
+              } catch (e) {
+                reject(e);
+              }
+            }, 100); 
+          } catch (e) {
+            reject(e);
+          }
         });
-
-        const pageElement = downloadContainer.firstChild as HTMLElement;
-        if (pageElement) {
-          const canvas = await html2canvas(pageElement, {
-            scale: 3,
-            useCORS: true,
-            backgroundColor: "#ffffff",
-          });
-          canvases.push(canvas);
-        }
       }
 
       if (canvases.length !== totalPages) {
