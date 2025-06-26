@@ -8,6 +8,7 @@ import {
   Loader2,
   BookOpen,
   Volume2,
+  RefreshCw,
 } from "lucide-react";
 import { getAiSentences, getAudioForSentence } from "./actions";
 import { Button } from "@/components/ui/button";
@@ -45,9 +46,9 @@ export default function Home() {
 
   const [aiConfig, setAiConfig] = useState({
     gradeLevel: "1",
-    dictationGoal: "받침 있는 글자",
+    dictationGoal: "",
     difficultyLevel: "보통",
-    sentenceCount: "5",
+    sentenceCount: "",
   });
 
   const [worksheetConfig, setWorksheetConfig] = useState({
@@ -160,9 +161,9 @@ export default function Home() {
     setManualInput('');
     setAiConfig({
       gradeLevel: "1",
-      dictationGoal: "받침 있는 글자",
+      dictationGoal: "",
       difficultyLevel: "보통",
-      sentenceCount: "5",
+      sentenceCount: "",
     });
     setWorksheetConfig({
       type: "grid" as WorksheetType,
@@ -175,7 +176,7 @@ export default function Home() {
     <div className="min-h-screen w-full bg-background p-4 sm:p-6 lg:p-8">
       <header className="text-center mb-8">
         <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold text-primary-foreground">
-          귀여운 AI 받아쓰기 뚝딱!
+          우리반 AI 받아쓰기
         </h1>
         <p className="mt-2 text-muted-foreground text-base sm:text-lg">
           AI가 받아쓰기 문장을 만들어 드려요! 또는 직접 문장을 입력해 보세요.
@@ -254,14 +255,17 @@ export default function Home() {
                     <Label htmlFor="count">자동 생성 개수</Label>
                     <Input
                       id="count"
-                      type="number"
-                      min="1"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       value={aiConfig.sentenceCount}
-                      onChange={(e) =>
-                        setAiConfig({
-                          ...aiConfig,
-                          sentenceCount: e.target.value,
-                        })
+                      onChange={(e) => {
+                          const value = e.target.value.replace(/[^0-9]/g, '');
+                          setAiConfig({
+                            ...aiConfig,
+                            sentenceCount: value,
+                          })
+                        }
                       }
                     />
                   </div>
@@ -370,11 +374,12 @@ export default function Home() {
       <footer className="mt-8 flex justify-center items-center gap-4 max-w-7xl mx-auto">
         <Button
           onClick={handleReset}
-          variant="destructive"
+          variant="outline"
           size="lg"
           className="w-full sm:w-auto"
         >
-          처음부터 다시하기
+          <RefreshCw className="mr-2 h-4 w-4" />
+          새로고침
         </Button>
       </footer>
     </div>
