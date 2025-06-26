@@ -43,13 +43,7 @@ type WorksheetType = "grid" | "underline";
 
 export default function Home() {
   const { toast } = useToast();
-  const [sentences, setSentences] = useState<string[]>([
-    "학교에 갑니다.",
-    "사과가 맛있다.",
-    "나는 책을 읽어.",
-    "강아지가 멍멍!",
-    "즐거운 하루야.",
-  ]);
+  const [sentences, setSentences] = useState<string[]>([]);
   const [manualInput, setManualInput] = useState("");
 
   const [aiConfig, setAiConfig] = useState({
@@ -323,9 +317,10 @@ export default function Home() {
         <Button
           onClick={handleReset}
           variant="outline"
+          size="lg"
           className="w-full sm:w-auto"
         >
-          <RefreshCw className="mr-2 h-4 w-4" /> 새 학습지 만들기
+          <RefreshCw className="mr-2 h-4 w-4" /> 새로고침
         </Button>
       </footer>
     </div>
