@@ -39,11 +39,9 @@ const GridRow = ({
       {chars.map((char, i) => (
         <div
           key={i}
-          className="relative aspect-square bg-white text-2xl font-display border-r border-b border-gray-400"
+          className="grid place-items-center aspect-square bg-white text-2xl font-display border-r border-b border-gray-400"
         >
-          <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-            {char}
-          </span>
+          <span>{char}</span>
         </div>
       ))}
     </div>
