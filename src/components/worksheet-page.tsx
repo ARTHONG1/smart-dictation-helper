@@ -41,7 +41,7 @@ const GridRow = ({
           key={i}
           className="grid place-items-center aspect-square bg-white text-2xl font-display border-r border-b border-gray-400"
         >
-          <span>{char}</span>
+          <span className="relative -top-1">{char}</span>
         </div>
       ))}
     </div>
