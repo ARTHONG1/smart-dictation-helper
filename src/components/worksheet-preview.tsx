@@ -102,6 +102,10 @@ export default function WorksheetPreview({
     const canvases: HTMLCanvasElement[] = [];
 
     try {
+      // Ensure the custom font is loaded before rendering
+      await document.fonts.load("400 1em Gaegu");
+      await document.fonts.load("700 1em Gaegu");
+
       for (let i = 0; i < totalPages; i++) {
         const pageIndex = i;
         const startIndex = pageIndex * sentencesPerPage;
@@ -110,18 +114,20 @@ export default function WorksheetPreview({
           startIndex + sentencesPerPage
         );
 
-        root.render(
-          <WorksheetPage
-            key={pageIndex}
-            id={`worksheet-page-render-${pageIndex}`}
-            sentences={pageSentences}
-            pageNumber={pageIndex + 1}
-            totalPages={totalPages}
-            config={worksheetConfig}
-          />
-        );
-
-        await new Promise((resolve) => setTimeout(resolve, 300));
+        await new Promise<void>((resolve) => {
+          root.render(
+            <WorksheetPage
+              key={pageIndex}
+              id={`worksheet-page-render-${pageIndex}`}
+              sentences={pageSentences}
+              pageNumber={pageIndex + 1}
+              totalPages={totalPages}
+              config={worksheetConfig}
+            />
+          );
+          // Small delay to ensure React renders the component
+          setTimeout(resolve, 100);
+        });
 
         const pageElement = downloadContainer.firstChild as HTMLElement;
         if (pageElement) {
