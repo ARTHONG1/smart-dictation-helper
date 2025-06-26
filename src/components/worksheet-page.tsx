@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -38,7 +37,7 @@ const GridRow = ({
       {chars.map((char, i) => (
         <div
           key={i}
-          className="aspect-square bg-white grid place-items-center text-2xl font-display border-r border-b border-gray-400"
+          className="aspect-square bg-white flex items-center justify-center text-2xl font-display border-r border-b border-gray-400"
         >
           {char}
         </div>
