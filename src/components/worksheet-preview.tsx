@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -102,9 +103,8 @@ export default function WorksheetPreview({
     const canvases: HTMLCanvasElement[] = [];
 
     try {
-      // Ensure the custom font is loaded before rendering
-      await document.fonts.load("400 1em Gaegu");
-      await document.fonts.load("700 1em Gaegu");
+      // Wait for all fonts on the page to be loaded and ready.
+      await document.fonts.ready;
 
       for (let i = 0; i < totalPages; i++) {
         const pageIndex = i;

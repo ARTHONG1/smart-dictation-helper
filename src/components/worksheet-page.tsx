@@ -147,9 +147,8 @@ export default function WorksheetPage({
   const [currentDate, setCurrentDate] = useState("");
 
   useEffect(() => {
-    // This will only run on the client, after initial hydration
     setCurrentDate(new Date().toLocaleDateString("ko-KR"));
-  }, []); // Empty dependency array ensures this runs once on mount
+  }, []); 
 
   const sentencesPerPage = useMemo(() => {
     const { type, isPracticeActive, practiceLines } = config;

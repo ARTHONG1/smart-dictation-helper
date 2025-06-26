@@ -10,9 +10,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['PT Sans', 'sans-serif'],
-        headline: ['PT Sans', 'sans-serif'],
-        display: ['Gaegu', 'cursive'],
+        body: ['Noto Sans KR', 'sans-serif'],
+        headline: ['Noto Sans KR', 'sans-serif'],
+        display: ['Gowun Dodum', 'cursive'],
         code: ['monospace'],
       },
       colors: {
