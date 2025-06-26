@@ -42,7 +42,11 @@ const prompt = ai.definePrompt({
   The English dictation goal is: {{englishDictationGoal}}.
   The difficulty level is: {{difficultyLevel}}.
 
-  Each sentence must be **no more than 11 characters long**, including spaces and punctuation.
+  **IMPORTANT: Each sentence MUST be 11 characters or less.**
+  This character limit includes spaces and all punctuation.
+  For example, the sentence "I see a cat." is 12 characters long and is **invalid**.
+  The sentence "I see a bug." is 11 characters long and is **valid**.
+
   The sentences should be simple, grammatically correct, and appropriate for the specified grade level.
   The sentences should be based on the dictation goal (e.g., specific phonics rules, sight words).
   The sentences should match the specified difficulty level, using vocabulary appropriate for that level.
