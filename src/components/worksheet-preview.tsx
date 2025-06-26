@@ -59,7 +59,7 @@ export default function WorksheetPreview({
     if (linesPerSentence <= 0) return sentences.length || 1;
 
     if (type === "grid") {
-      return Math.floor(15 / linesPerSentence) || 1;
+      return Math.floor(12 / linesPerSentence) || 1;
     } else {
       return Math.floor(10 / linesPerSentence) || 1;
     }
@@ -83,14 +83,14 @@ export default function WorksheetPreview({
     if (direction === "next" && currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
     } else if (direction === "prev" && currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+      setCurrentPage(currentPage + 1);
     }
   };
 
   const handleDownload = async (type: "pdf" | "image") => {
     if (sentences.length === 0) return;
     setIsDownloading(type);
-
+  
     const { default: html2canvas } = await import("html2canvas");
     
     const downloadContainer = document.createElement("div");
@@ -98,13 +98,13 @@ export default function WorksheetPreview({
     downloadContainer.style.left = "-9999px";
     downloadContainer.style.width = "210mm"; 
     document.body.appendChild(downloadContainer);
-
+  
     const root = createRoot(downloadContainer);
     const canvases: HTMLCanvasElement[] = [];
-
+  
     try {
       await document.fonts.ready;
-
+  
       for (let i = 0; i < totalPages; i++) {
         const pageIndex = i;
         const startIndex = pageIndex * sentencesPerPage;
@@ -112,46 +112,45 @@ export default function WorksheetPreview({
           startIndex,
           startIndex + sentencesPerPage
         );
-
-        await new Promise<void>(async (resolve, reject) => {
-          try {
-            root.render(
-              <WorksheetPage
-                key={pageIndex}
-                id={`worksheet-page-render-${pageIndex}`}
-                sentences={pageSentences}
-                pageNumber={pageIndex + 1}
-                totalPages={totalPages}
-                config={worksheetConfig}
-                isForDownload={true}
-              />
-            );
-            setTimeout(async () => {
-              try {
-                const pageElement = downloadContainer.firstChild as HTMLElement;
-                if (pageElement) {
-                  const canvas = await html2canvas(pageElement, {
-                    scale: 3,
-                    useCORS: true,
-                    backgroundColor: "#ffffff",
-                  });
-                  canvases.push(canvas);
-                  resolve();
-                } else {
-                  reject(new Error(`Page element for page ${i + 1} not found.`));
-                }
-              } catch (e) {
-                reject(e);
+  
+        // Each page is rendered and captured sequentially
+        await new Promise<void>((resolve, reject) => {
+          root.render(
+            <WorksheetPage
+              key={pageIndex}
+              id={`worksheet-page-render-${pageIndex}`}
+              sentences={pageSentences}
+              pageNumber={pageIndex + 1}
+              totalPages={totalPages}
+              config={worksheetConfig}
+              isForDownload={true}
+            />
+          );
+  
+          // Give the browser a moment to render fonts and layout
+          setTimeout(async () => {
+            try {
+              const pageElement = downloadContainer.firstChild as HTMLElement;
+              if (pageElement) {
+                const canvas = await html2canvas(pageElement, {
+                  scale: 3,
+                  useCORS: true,
+                  backgroundColor: "#ffffff",
+                });
+                canvases.push(canvas);
+                resolve();
+              } else {
+                reject(new Error(`Page element for page ${i + 1} not found.`));
               }
-            }, 100); 
-          } catch (e) {
-            reject(e);
-          }
+            } catch (e) {
+              reject(e);
+            }
+          }, 100);
         });
       }
-
+  
       if (canvases.length !== totalPages) {
-        throw new Error("모든 페이지를 렌더링하는데 실패했습니다.");
+        throw new Error("Failed to render all pages.");
       }
       
       if (type === "pdf") {

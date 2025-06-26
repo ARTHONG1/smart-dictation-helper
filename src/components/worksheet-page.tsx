@@ -43,12 +43,12 @@ const GridRow = ({
       {chars.map((char, i) => (
         <div
           key={i}
-          className="aspect-square bg-white border-r border-b border-gray-400 flex items-center justify-center"
+          className="aspect-square bg-white border-r border-b border-gray-400 relative"
         >
           <span
             className={cn(
-              "text-2xl font-display",
-              isForDownload && "relative -top-1"
+              "absolute inset-0 flex items-center justify-center text-2xl font-display",
+              isForDownload && "top-[-2px]"
             )}
           >
             {char}
@@ -171,7 +171,7 @@ export default function WorksheetPage({
     if (linesPerSentence <= 0) return 1;
 
     if (type === "grid") {
-      return Math.floor(15 / linesPerSentence) || 1;
+      return Math.floor(12 / linesPerSentence) || 1;
     } else {
       return Math.floor(10 / linesPerSentence) || 1;
     }
