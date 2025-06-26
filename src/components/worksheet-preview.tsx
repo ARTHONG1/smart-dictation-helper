@@ -70,21 +70,27 @@ export default function WorksheetPreview({
     return Math.ceil(sentences.length / sentencesPerPage) || 1;
   }, [sentences.length, sentencesPerPage]);
 
+  const startIndex = useMemo(
+    () => (currentPage - 1) * sentencesPerPage,
+    [currentPage, sentencesPerPage]
+  );
+
   const currentSentences = useMemo(() => {
     if (currentPage > totalPages) {
       setCurrentPage(totalPages);
     }
-    const startIndex = (currentPage - 1) * sentencesPerPage;
     const endIndex = startIndex + sentencesPerPage;
     return sentences.slice(startIndex, endIndex);
-  }, [currentPage, sentences, sentencesPerPage, totalPages]);
+  }, [currentPage, sentences, sentencesPerPage, totalPages, startIndex]);
 
   const handlePageChange = (direction: "next" | "prev") => {
-    if (direction === "next" && currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    } else if (direction === "prev" && currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
+    setCurrentPage((prevPage) => {
+      if (direction === "next") {
+        return prevPage < totalPages ? prevPage + 1 : prevPage;
+      } else {
+        return prevPage > 1 ? prevPage - 1 : prevPage;
+      }
+    });
   };
 
   const handleDownload = async (type: "pdf" | "image") => {
@@ -107,10 +113,10 @@ export default function WorksheetPreview({
 
       for (let i = 0; i < totalPages; i++) {
         const pageIndex = i;
-        const startIndex = pageIndex * sentencesPerPage;
+        const startIndexForPage = pageIndex * sentencesPerPage;
         const pageSentences = sentences.slice(
-          startIndex,
-          startIndex + sentencesPerPage
+          startIndexForPage,
+          startIndexForPage + sentencesPerPage
         );
 
         await new Promise<void>((resolve, reject) => {
@@ -122,6 +128,7 @@ export default function WorksheetPreview({
               pageNumber={pageIndex + 1}
               totalPages={totalPages}
               config={worksheetConfig}
+              startIndex={startIndexForPage}
               isForDownload={true}
             />
           );
@@ -255,6 +262,7 @@ export default function WorksheetPreview({
                 pageNumber={currentPage}
                 totalPages={totalPages}
                 config={worksheetConfig}
+                startIndex={startIndex}
                 isPreview
             />
         ) : (

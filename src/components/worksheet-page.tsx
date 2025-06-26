@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 type WorksheetType = "grid" | "underline";
@@ -18,6 +18,7 @@ interface WorksheetPageProps {
   pageNumber: number;
   totalPages: number;
   config: WorksheetConfig;
+  startIndex: number;
   isPreview?: boolean;
   isForDownload?: boolean;
 }
@@ -40,7 +41,7 @@ const GridRow = ({
       {!isPractice && `${sentenceNumber}.`}
     </div>
     <div className="grid grid-cols-11 gap-px border-l border-t border-gray-400 bg-gray-400 flex-1">
-      {chars.map((char, i) => (
+      {Array.from({ length: 11 }).map((_, i) => (
         <div
           key={i}
           className="aspect-square bg-white border-r border-b border-gray-400 relative"
@@ -51,7 +52,7 @@ const GridRow = ({
               isForDownload && "top-[-2px]"
             )}
           >
-            {char}
+            {chars[i] || ""}
           </span>
         </div>
       ))}
@@ -86,7 +87,7 @@ const GridSentence = ({
         Array.from({ length: practiceLinesNum }).map((_, i) => (
           <GridRow
             key={`practice-grid-${sentenceNumber}-${i}`}
-            chars={Array(11).fill("")}
+            chars={[]}
             isPractice={true}
             rowKey={`practice-grid-${sentenceNumber}-${i}`}
             isForDownload={isForDownload}
@@ -154,6 +155,7 @@ export default function WorksheetPage({
   pageNumber,
   totalPages,
   config,
+  startIndex,
   isPreview = false,
   isForDownload = false,
 }: WorksheetPageProps) {
@@ -161,22 +163,7 @@ export default function WorksheetPage({
 
   useEffect(() => {
     setCurrentDate(new Date().toLocaleDateString("ko-KR"));
-  }, []); 
-
-  const sentencesPerPage = useMemo(() => {
-    const { type, isPracticeActive, practiceLines } = config;
-    const practiceLinesNum = parseInt(practiceLines, 10) || 0;
-    const linesPerSentence = 1 + (isPracticeActive ? practiceLinesNum : 0);
-
-    if (linesPerSentence <= 0) return 1;
-
-    if (type === "grid") {
-      return Math.floor(12 / linesPerSentence) || 1;
-    } else {
-      return Math.floor(10 / linesPerSentence) || 1;
-    }
-  }, [config]);
-
+  }, []);
 
   return (
     <div
@@ -198,7 +185,7 @@ export default function WorksheetPage({
         </header>
         <main className="flex-1 space-y-4">
           {sentences.map((sentence, index) => {
-            const sentenceNumber = (pageNumber - 1) * sentencesPerPage + index + 1;
+            const sentenceNumber = startIndex + index + 1;
             if (config.type === "grid") {
               return (
                 <GridSentence
