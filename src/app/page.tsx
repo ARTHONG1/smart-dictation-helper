@@ -48,6 +48,7 @@ export default function Home() {
   const [aiConfig, setAiConfig] = useState({
     gradeLevel: "1",
     dictationGoal: "",
+    englishDictationGoal: "",
     difficultyLevel: "보통",
     sentenceCount: "",
   });
@@ -163,6 +164,7 @@ export default function Home() {
     setAiConfig({
       gradeLevel: "1",
       dictationGoal: "",
+      englishDictationGoal: "",
       difficultyLevel: "보통",
       sentenceCount: "",
     });
@@ -249,6 +251,17 @@ export default function Home() {
                       value={aiConfig.dictationGoal}
                       onChange={(e) =>
                         setAiConfig({ ...aiConfig, dictationGoal: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="english-goal">영어 받아쓰기 목표</Label>
+                    <Input
+                      id="english-goal"
+                      placeholder="예: phonics, sight words"
+                      value={aiConfig.englishDictationGoal}
+                      onChange={(e) =>
+                        setAiConfig({ ...aiConfig, englishDictationGoal: e.target.value })
                       }
                     />
                   </div>
