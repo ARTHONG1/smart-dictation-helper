@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 
 type WorksheetType = "grid" | "underline";
@@ -37,7 +38,7 @@ const GridRow = ({
       {chars.map((char, i) => (
         <div
           key={i}
-          className="aspect-square bg-white grid place-items-center text-2xl font-body border-r border-b border-gray-400"
+          className="aspect-square bg-white flex items-center justify-center text-2xl font-body leading-none border-r border-b border-gray-400"
         >
           {char}
         </div>
@@ -140,6 +141,21 @@ export default function WorksheetPage({
     setCurrentDate(new Date().toLocaleDateString("ko-KR"));
   }, []); // Empty dependency array ensures this runs once on mount
 
+  const sentencesPerPage = useMemo(() => {
+    const { type, isPracticeActive, practiceLines } = config;
+    const practiceLinesNum = parseInt(practiceLines, 10) || 0;
+    const linesPerSentence = 1 + (isPracticeActive ? practiceLinesNum : 0);
+
+    if (linesPerSentence <= 0) return 1;
+
+    if (type === "grid") {
+      return Math.floor(15 / linesPerSentence) || 1;
+    } else {
+      return Math.floor(10 / linesPerSentence) || 1;
+    }
+  }, [config]);
+
+
   return (
     <div
       id={id}
@@ -160,22 +176,14 @@ export default function WorksheetPage({
         </header>
         <main className="flex-1 space-y-4">
           {sentences.map((sentence, index) => {
-            const sentenceNumber =
-              (pageNumber - 1) *
-                Math.floor(
-                  config.type === "grid"
-                    ? 15
-                    : 10 / (1 + (config.isPracticeActive ? (parseInt(config.practiceLines) || 0) : 0))
-                ) +
-              index +
-              1;
+            const sentenceNumber = (pageNumber - 1) * sentencesPerPage + index + 1;
             if (config.type === "grid") {
               return (
                 <GridSentence
                   key={index}
                   sentence={sentence}
                   config={config}
-                  sentenceNumber={index + 1}
+                  sentenceNumber={sentenceNumber}
                 />
               );
             }
@@ -184,7 +192,7 @@ export default function WorksheetPage({
                 key={index}
                 sentence={sentence}
                 config={config}
-                sentenceNumber={index + 1}
+                sentenceNumber={sentenceNumber}
               />
             );
           })}
