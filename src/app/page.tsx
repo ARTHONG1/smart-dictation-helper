@@ -9,6 +9,7 @@ import {
   BookOpen,
   Volume2,
   RefreshCw,
+  Globe,
 } from "lucide-react";
 import { getAiSentences, getAudioForSentence } from "./actions";
 import { Button } from "@/components/ui/button";
@@ -270,7 +271,7 @@ export default function Home() {
                     />
                   </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="flex flex-col gap-2">
                   <Button onClick={handleAiGenerate} disabled={isLoading} className="w-full">
                     {isLoading ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -278,6 +279,10 @@ export default function Home() {
                       <Sparkles className="mr-2 h-4 w-4" />
                     )}
                     AI 문장 자동 생성
+                  </Button>
+                  <Button disabled className="w-full" variant="secondary">
+                    <Globe className="mr-2 h-4 w-4" />
+                    영어 특화 AI 문장 자동 생성
                   </Button>
                 </CardFooter>
               </Card>
