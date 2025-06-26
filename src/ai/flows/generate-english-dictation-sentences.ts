@@ -13,7 +13,7 @@ import {z} from 'genkit';
 
 const GenerateEnglishDictationSentencesInputSchema = z.object({
   gradeLevel: z.number().describe('The grade level of the dictation sentences (1-6).'),
-  englishDictationGoal: z.string().describe('The English dictation goal (e.g., phonics, sight words).'),
+  englishDictationGoal: z.string().describe('The English dictation topic. It can be in English or Korean (e.g., phonics, sight words, 행복). This is a suggestion for the AI.'),
   difficultyLevel: z.enum(['쉬움', '보통', '어려움']).describe('The difficulty level (Easy, Normal, Hard) of the dictation sentences.'),
   sentenceCount: z.number().describe('The number of sentences to generate.'),
 });
@@ -36,23 +36,27 @@ const prompt = ai.definePrompt({
   name: 'generateEnglishDictationSentencesPrompt',
   input: {schema: GenerateEnglishDictationSentencesInputSchema},
   output: {schema: GenerateEnglishDictationSentencesOutputSchema},
-  prompt: `You are an AI assistant for elementary school teachers. Your task is to generate short English sentences for dictation tests.
+  prompt: `You are an AI assistant for elementary school teachers. Your primary task is to generate **extremely short** English sentences for dictation tests.
 
-Follow these rules STRICTLY:
-1.  Generate {{sentenceCount}} sentences for {{gradeLevel}} grade students.
-2.  The topic is "{{englishDictationGoal}}".
-3.  The difficulty is "{{difficultyLevel}}".
-4.  **THE ABSOLUTE MAXIMUM LENGTH for each sentence is 11 characters.** This includes all letters, spaces, and punctuation. Any sentence longer than 11 characters is invalid.
+**The most important rule is the length: EVERY sentence MUST be 11 characters or less.** This includes all letters, spaces, and punctuation. This is a strict technical requirement.
 
-Here are examples of length calculation:
-- "I see a bug." is 11 characters long. This is VALID.
-- "I see a cat." is 12 characters long. This is INVALID.
-- "A red dog." is 10 characters long. This is VALID.
-- "It is a cat" is 11 characters long. This is VALID.
+Examples:
+- "I am a boy." -> 11 chars. (VALID)
+- "It is a cat." -> 12 chars. (INVALID)
+- "She can run." -> 12 chars. (INVALID)
+- "Look at it." -> 11 chars. (VALID)
+- "It is fun!" -> 10 chars. (VALID)
 
-Before you provide the final JSON output, you MUST double-check every single sentence to ensure it is 11 characters or less. If any sentence is longer, you must shorten it or create a new one that fits the length constraint.
+Generate {{sentenceCount}} sentences for a {{gradeLevel}} grade student.
+The difficulty level should be {{difficultyLevel}}.
 
-Return ONLY a JSON object with a "sentences" key containing an array of the generated strings.
+The user provided a topic for inspiration: '{{englishDictationGoal}}'. The topic can be in Korean.
+However, if you cannot create a sentence that fits the 11-character limit for the topic, create a simple sentence that ignores the topic.
+**The 11-character limit is more important than the topic.**
+
+Before you provide the final JSON output, you MUST double-check every single sentence to ensure it is 11 characters or less.
+
+Return ONLY a JSON object with a "sentences" key containing an array of the generated strings, where each string is 11 characters or less.
   `,
 });
 
