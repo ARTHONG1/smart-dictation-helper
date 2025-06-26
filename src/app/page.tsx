@@ -179,7 +179,7 @@ export default function Home() {
           우리반 AI 받아쓰기
         </h1>
         <p className="mt-2 text-muted-foreground text-base sm:text-lg">
-          AI가 받아쓰기 문장을 만들어 드려요! 또는 직접 문장을 입력해 보세요.
+          AI가 받아쓰기 학습지를 자동으로 만들어주고, 또박또박 읽어주는 음성도 함께 제공해요. 선생님의 소중한 시간을 아껴드립니다.
         </p>
       </header>
 
