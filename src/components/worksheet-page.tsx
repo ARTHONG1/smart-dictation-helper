@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -39,9 +40,11 @@ const GridRow = ({
       {chars.map((char, i) => (
         <div
           key={i}
-          className="flex items-center justify-center aspect-square bg-white text-2xl font-display border-r border-b border-gray-400"
+          className="relative aspect-square bg-white border-r border-b border-gray-400"
         >
-          {char}
+          <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl font-display">
+            {char}
+          </span>
         </div>
       ))}
     </div>
