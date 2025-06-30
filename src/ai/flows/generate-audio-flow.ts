@@ -48,8 +48,9 @@ const generateAudioFlow = ai.defineFlow(
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Algenib' },
+            prebuiltVoiceConfig: { voiceName: 'ko-KR-Wavenet-A' },
           },
+          speakingRate: 0.95,
         },
       },
       prompt: sentence,
