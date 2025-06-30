@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Sparkles,
   Pencil,
@@ -37,6 +38,8 @@ import WorksheetPreview from "@/components/worksheet-preview";
 
 type WorksheetType = "grid" | "underline";
 
+const AUDIO_CACHE_KEY = 'audioCache';
+
 export default function Home() {
   const { toast } = useToast();
   const [sentences, setSentences] = useState<string[]>([]);
@@ -61,6 +64,17 @@ export default function Home() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isEnglishLoading, setIsEnglishLoading] = useState(false);
+
+  useEffect(() => {
+    try {
+      const storedCache = localStorage.getItem(AUDIO_CACHE_KEY);
+      if (storedCache) {
+        setAudioCache(JSON.parse(storedCache));
+      }
+    } catch (error) {
+      console.error("Failed to load audio cache from localStorage", error);
+    }
+  }, []);
 
   const handleSentenceChange = (index: number, value: string) => {
     if (value.length > 11) {
@@ -114,9 +128,18 @@ export default function Home() {
     try {
       const result = await getAudioForSentence(sentence);
       if (result.success && result.audioData) {
-        setAudioCache(prev => ({ ...prev, [sentence]: result.audioData! }));
         const audio = new Audio(result.audioData);
         audio.play();
+
+        setAudioCache(prevCache => {
+          const newCache = { ...prevCache, [sentence]: result.audioData! };
+          try {
+            localStorage.setItem(AUDIO_CACHE_KEY, JSON.stringify(newCache));
+          } catch (error) {
+            console.error("Failed to save audio cache to localStorage", error);
+          }
+          return newCache;
+        });
       } else {
         toast({
           variant: "destructive",
