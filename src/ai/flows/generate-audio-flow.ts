@@ -46,11 +46,6 @@ const generateAudioFlow = ai.defineFlow(
       model: 'googleai/gemini-2.5-flash-preview-tts',
       config: {
         responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'ko-KR-Wavenet-A' },
-          },
-        },
       },
       prompt: sentence,
     });
