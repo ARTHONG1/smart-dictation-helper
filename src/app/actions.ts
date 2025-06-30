@@ -56,9 +56,6 @@ export async function getAudioForSentence(sentence: string) {
   } catch (error) {
     console.error("Audio Generation Error:", error);
     if (error instanceof Error) {
-      if (error.message.includes("429")) {
-        return { success: false, error: "요청이 너무 많습니다. 1분 후에 다시 시도해주세요." };
-      }
       return { success: false, error: `오디오 생성에 실패했습니다: ${error.message}` };
     }
     return { success: false, error: "오디오 생성 중 알 수 없는 오류가 발생했습니다." };

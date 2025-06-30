@@ -119,14 +119,7 @@ export default function Home() {
   
     if (audioCache[sentence]) {
       const audio = new Audio(audioCache[sentence]);
-      audio.play().catch(e => {
-        console.error("Audio playback error from cache:", e);
-        toast({
-          variant: "destructive",
-          title: "재생 오류",
-          description: "캐시된 오디오 파일을 재생할 수 없습니다.",
-        });
-      });
+      audio.play();
       return;
     }
   
@@ -135,14 +128,7 @@ export default function Home() {
       const result = await getAudioForSentence(sentence);
       if (result.success && result.audioData) {
         const audio = new Audio(result.audioData);
-        audio.play().catch(e => {
-          console.error("Audio playback error:", e);
-          toast({
-            variant: "destructive",
-            title: "재생 오류",
-            description: "브라우저에서 오디오 파일을 재생할 수 없습니다.",
-          });
-        });
+        audio.play();
 
         setAudioCache(prevCache => {
           const newCache = { ...prevCache, [sentence]: result.audioData! };
@@ -164,8 +150,8 @@ export default function Home() {
       console.error("Audio generation/playback error:", error);
       toast({
         variant: "destructive",
-        title: "치명적인 오류",
-        description: "오디오를 처리하는 중 예상치 못한 문제가 발생했습니다.",
+        title: "오디오 생성 오류",
+        description: "오디오를 생성하는 중 문제가 발생했습니다.",
       });
     } finally {
       setAudioLoadingIndex(null);
