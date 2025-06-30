@@ -50,7 +50,6 @@ const generateAudioFlow = ai.defineFlow(
           voiceConfig: {
             prebuiltVoiceConfig: { voiceName: 'ko-KR-Wavenet-A' },
           },
-          speakingRate: 0.95,
         },
       },
       prompt: sentence,
