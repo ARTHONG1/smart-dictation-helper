@@ -46,8 +46,6 @@ export default function Home() {
   const [manualInput, setManualInput] = useState("");
   const [audioLoadingIndex, setAudioLoadingIndex] = useState<number | null>(null);
   const [audioCache, setAudioCache] = useState<Record<string, string>>({});
-  const [audioPreloadStatus, setAudioPreloadStatus] = useState<Record<number, boolean>>({});
-
 
   const [aiConfig, setAiConfig] = useState({
     gradeLevel: "1",
@@ -77,42 +75,6 @@ export default function Home() {
     }
   }, []);
   
-  // Preload audio in the background sequentially
-  useEffect(() => {
-    const preloadAudio = async () => {
-      for (let i = 0; i < sentences.length; i++) {
-        const sentence = sentences[i];
-        if (!audioCache[sentence]) {
-          setAudioPreloadStatus(prev => ({ ...prev, [i]: true }));
-          try {
-            const result = await getAudioForSentence(sentence);
-            if (result.success && result.audioData) {
-              setAudioCache(prevCache => {
-                const newCache = { ...prevCache, [sentence]: result.audioData! };
-                try {
-                  localStorage.setItem(AUDIO_CACHE_KEY, JSON.stringify(newCache));
-                } catch (e) {
-                  console.error("Failed to save audio cache to localStorage", e);
-                }
-                return newCache;
-              });
-            }
-          } catch (error) {
-            console.error(`Failed to preload audio for: "${sentence}"`, error);
-          } finally {
-            setAudioPreloadStatus(prev => ({ ...prev, [i]: false }));
-          }
-        }
-      }
-    };
-
-    if (sentences.length > 0) {
-      preloadAudio();
-    }
-    // Disabling exhaustive-deps because we only want this to run when `sentences` array itself changes, not the cache.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sentences]);
-
   const handleSentenceChange = (index: number, value: string) => {
     if (value.length > 11) {
       toast({
@@ -153,14 +115,17 @@ export default function Home() {
   };
 
   const handlePlayAudio = async (sentence: string, index: number) => {
-    if (audioLoadingIndex !== null || audioPreloadStatus[index]) return;
+    // Prevent multiple audio requests at the same time
+    if (audioLoadingIndex !== null) return;
   
+    // Play from cache if available
     if (audioCache[sentence]) {
       const audio = new Audio(audioCache[sentence]);
       audio.play();
       return;
     }
   
+    // If not in cache, fetch, play, and then cache it.
     setAudioLoadingIndex(index);
     try {
       const result = await getAudioForSentence(sentence);
@@ -168,6 +133,7 @@ export default function Home() {
         const audio = new Audio(result.audioData);
         audio.play();
 
+        // Update the cache and save to localStorage
         setAudioCache(prevCache => {
           const newCache = { ...prevCache, [sentence]: result.audioData! };
           try {
@@ -439,10 +405,10 @@ export default function Home() {
                         variant="ghost"
                         size="icon"
                         onClick={() => handlePlayAudio(sentence, index)}
-                        disabled={audioLoadingIndex === index || audioPreloadStatus[index]}
+                        disabled={audioLoadingIndex === index}
                         title="문장 듣기"
                       >
-                        {audioLoadingIndex === index || audioPreloadStatus[index] ? (
+                        {audioLoadingIndex === index ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                           <Volume2 className="h-4 w-4" />
