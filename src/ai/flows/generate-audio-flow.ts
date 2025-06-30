@@ -49,13 +49,22 @@ const generateAudioFlow = ai.defineFlow(
       },
       prompt: sentence,
     });
-    if (!media) {
-      throw new Error('No media returned from TTS model.');
+    
+    if (!media || !media.url || !media.url.includes(',')) {
+      throw new Error('TTS 모델로부터 유효하지 않거나 비어있는 오디오 데이터를 받았습니다.');
     }
-    const audioBuffer = Buffer.from(
-      media.url.substring(media.url.indexOf(',') + 1),
-      'base64'
-    );
+
+    const base64Data = media.url.substring(media.url.indexOf(',') + 1);
+    if (!base64Data) {
+        throw new Error('TTS 모델로부터 비어있는 오디오 데이터를 받았습니다.');
+    }
+
+    const audioBuffer = Buffer.from(base64Data, 'base64');
+
+    if (audioBuffer.length === 0) {
+        throw new Error('오디오 데이터가 비어있어 변환할 수 없습니다.');
+    }
+
     const wavData = await toWav(audioBuffer);
     return `data:audio/wav;base64,${wavData}`;
   }
