@@ -11,6 +11,7 @@ import {
   Volume2,
   RefreshCw,
   Globe,
+  DownloadCloud,
 } from "lucide-react";
 import { getAiSentences, getAudioForSentence, getEnglishAiSentences } from "./actions";
 import { Button } from "@/components/ui/button";
@@ -154,10 +155,14 @@ export default function Home() {
           return newCache;
         });
       } else {
+        let description = result.error || "알 수 없는 오류로 오디오를 생성할 수 없습니다.";
+        if (description.includes("429")) {
+            description = "요청 횟수 제한을 초과했습니다. 잠시 후 다시 시도해주세요. (무료 등급은 1분/하루 요청 횟수가 제한됩니다)";
+        }
         toast({
           variant: "destructive",
           title: "오디오 생성 오류",
-          description: result.error || "알 수 없는 오류로 오디오를 생성할 수 없습니다.",
+          description,
         });
       }
     } catch (error) {
@@ -415,19 +420,29 @@ export default function Home() {
                         }
                         className="flex-grow"
                       />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handlePlayAudio(sentence)}
-                        disabled={fetchingSentences.has(sentence)}
-                        title="문장 듣기"
-                      >
-                        {fetchingSentences.has(sentence) ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
+                      {audioCache[sentence] ? (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handlePlayAudio(sentence)}
+                          title="문장 듣기"
+                        >
                           <Volume2 className="h-4 w-4" />
-                        )}
-                      </Button>
+                        </Button>
+                      ) : fetchingSentences.has(sentence) ? (
+                        <Button variant="ghost" size="icon" disabled title="음성 생성 중...">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handlePlayAudio(sentence)}
+                          title="음성 생성하기"
+                        >
+                          <DownloadCloud className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
