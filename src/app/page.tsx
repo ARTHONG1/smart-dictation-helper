@@ -75,54 +75,6 @@ export default function Home() {
     }
   }, []);
 
-  useEffect(() => {
-    const prefetchAudio = async () => {
-      const sentencesToFetch = sentences.filter(s => !audioCache[s] && !fetchingSentences.has(s));
-      if (sentencesToFetch.length === 0) return;
-
-      setFetchingSentences(prev => new Set([...prev, ...sentencesToFetch]));
-
-      for (const sentence of sentencesToFetch) {
-        if (audioCache[sentence]) {
-            setFetchingSentences(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(sentence);
-                return newSet;
-            });
-            continue;
-        }
-
-        try {
-          const result = await getAudioForSentence(sentence);
-          if (result.success && result.audioData) {
-            setAudioCache(prevCache => {
-              const newCache = { ...prevCache, [sentence]: result.audioData! };
-              try {
-                localStorage.setItem(AUDIO_CACHE_KEY, JSON.stringify(newCache));
-              } catch (error) {
-                console.error("Failed to save audio cache to localStorage", error);
-              }
-              return newCache;
-            });
-          } else {
-             console.error(`Failed to prefetch audio for "${sentence}": ${result.error}`);
-          }
-        } catch (error) {
-            console.error(`Error prefetching audio for "${sentence}":`, error);
-        } finally {
-            setFetchingSentences(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(sentence);
-                return newSet;
-            });
-        }
-      }
-    };
-
-    prefetchAudio();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sentences]);
-  
   const handleSentenceChange = (index: number, value: string) => {
     if (value.length > 11) {
       toast({
