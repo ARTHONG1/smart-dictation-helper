@@ -195,6 +195,7 @@ export default function Home() {
   const handleReset = () => {
     setSentences([]);
     setManualInput('');
+    setCombinedAudio(null);
     setAiConfig({
       gradeLevel: "1",
       dictationGoal: "",
@@ -378,7 +379,7 @@ export default function Home() {
                       className="w-full"
                   >
                       {isGeneratingAudio ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Volume2 className="mr-2 h-4 w-4" />}
-                      전체 문장 음성 생성
+                      고급) 고품질 전체 문장 음성 생성
                   </Button>
                   {combinedAudio && (
                       <div className="flex items-center gap-2">
@@ -462,5 +463,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
