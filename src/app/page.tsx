@@ -120,7 +120,7 @@ export default function Home() {
         utterance.voice = voice;
     }
     utterance.lang = voice?.lang || (isKorean ? 'ko-KR' : 'en-US');
-    utterance.rate = 0.8; // 속도 조절 (기본값 1)
+    utterance.rate = 0.8;
     
     utterance.onstart = () => {
         setIsBrowserSpeaking(true);
@@ -461,11 +461,11 @@ export default function Home() {
                       고급) 고품질 전체 문장 음성 생성
                   </Button>
                   {combinedAudio && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-col items-center gap-2">
                           <audio controls src={combinedAudio} className="w-full h-10">
                             오디오를 지원하지 않는 브라우저입니다.
                           </audio>
-                          <Button
+                           <Button
                               onClick={() => {
                                   const link = document.createElement('a');
                                   link.href = combinedAudio;
@@ -475,10 +475,10 @@ export default function Home() {
                                   document.body.removeChild(link);
                               }}
                               variant="outline"
-                              size="icon"
-                              title="음성 파일 다운로드"
+                              className="w-full"
                           >
-                              <DownloadCloud className="h-4 w-4" />
+                              <DownloadCloud className="mr-2 h-4 w-4" />
+                              음성 파일 다운로드 (.wav)
                           </Button>
                       </div>
                   )}
