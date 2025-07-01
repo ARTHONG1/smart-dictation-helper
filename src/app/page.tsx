@@ -120,6 +120,7 @@ export default function Home() {
         utterance.voice = voice;
     }
     utterance.lang = voice?.lang || (isKorean ? 'ko-KR' : 'en-US');
+    utterance.rate = 0.8; // 속도 조절 (기본값 1)
     
     utterance.onstart = () => {
         setIsBrowserSpeaking(true);
