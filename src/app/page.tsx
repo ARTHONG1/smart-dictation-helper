@@ -44,8 +44,8 @@ export default function Home() {
   const { toast } = useToast();
   const [sentences, setSentences] = useState<string[]>([]);
   const [manualInput, setManualInput] = useState("");
-  const [audioLoadingIndex, setAudioLoadingIndex] = useState<number | null>(null);
   const [audioCache, setAudioCache] = useState<Record<string, string>>({});
+  const [fetchingSentences, setFetchingSentences] = useState<Set<string>>(new Set());
 
   const [aiConfig, setAiConfig] = useState({
     gradeLevel: "1",
@@ -74,6 +74,54 @@ export default function Home() {
       console.error("Failed to load audio cache from localStorage", error);
     }
   }, []);
+
+  useEffect(() => {
+    const prefetchAudio = async () => {
+      const sentencesToFetch = sentences.filter(s => !audioCache[s] && !fetchingSentences.has(s));
+      if (sentencesToFetch.length === 0) return;
+
+      setFetchingSentences(prev => new Set([...prev, ...sentencesToFetch]));
+
+      for (const sentence of sentencesToFetch) {
+        if (audioCache[sentence]) {
+            setFetchingSentences(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(sentence);
+                return newSet;
+            });
+            continue;
+        }
+
+        try {
+          const result = await getAudioForSentence(sentence);
+          if (result.success && result.audioData) {
+            setAudioCache(prevCache => {
+              const newCache = { ...prevCache, [sentence]: result.audioData! };
+              try {
+                localStorage.setItem(AUDIO_CACHE_KEY, JSON.stringify(newCache));
+              } catch (error) {
+                console.error("Failed to save audio cache to localStorage", error);
+              }
+              return newCache;
+            });
+          } else {
+             console.error(`Failed to prefetch audio for "${sentence}": ${result.error}`);
+          }
+        } catch (error) {
+            console.error(`Error prefetching audio for "${sentence}":`, error);
+        } finally {
+            setFetchingSentences(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(sentence);
+                return newSet;
+            });
+        }
+      }
+    };
+
+    prefetchAudio();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sentences]);
   
   const handleSentenceChange = (index: number, value: string) => {
     if (value.length > 11) {
@@ -114,21 +162,35 @@ export default function Home() {
     setSentences((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handlePlayAudio = async (sentence: string, index: number) => {
-    if (audioLoadingIndex !== null) return;
+  const handlePlayAudio = async (sentence: string) => {
+    if (fetchingSentences.has(sentence)) return;
   
     if (audioCache[sentence]) {
       const audio = new Audio(audioCache[sentence]);
-      audio.play();
+      audio.play().catch(e => {
+        console.error("Error playing audio:", e);
+        toast({
+          variant: "destructive",
+          title: "오디오 재생 오류",
+          description: "오디오 파일을 재생할 수 없습니다."
+        });
+      });
       return;
     }
   
-    setAudioLoadingIndex(index);
+    setFetchingSentences(prev => new Set(prev).add(sentence));
     try {
       const result = await getAudioForSentence(sentence);
       if (result.success && result.audioData) {
         const audio = new Audio(result.audioData);
-        audio.play();
+        audio.play().catch(e => {
+          console.error("Error playing audio:", e);
+          toast({
+            variant: "destructive",
+            title: "오디오 재생 오류",
+            description: "오디오 파일을 재생할 수 없습니다."
+          });
+        });
 
         setAudioCache(prevCache => {
           const newCache = { ...prevCache, [sentence]: result.audioData! };
@@ -154,7 +216,11 @@ export default function Home() {
         description: "오디오를 생성하는 중 문제가 발생했습니다.",
       });
     } finally {
-      setAudioLoadingIndex(null);
+      setFetchingSentences(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(sentence);
+        return newSet;
+      });
     }
   };
 
@@ -400,11 +466,11 @@ export default function Home() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handlePlayAudio(sentence, index)}
-                        disabled={audioLoadingIndex === index}
+                        onClick={() => handlePlayAudio(sentence)}
+                        disabled={fetchingSentences.has(sentence)}
                         title="문장 듣기"
                       >
-                        {audioLoadingIndex === index ? (
+                        {fetchingSentences.has(sentence) ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                           <Volume2 className="h-4 w-4" />
