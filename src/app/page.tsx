@@ -37,6 +37,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import WorksheetPreview from "@/components/worksheet-preview";
+import { Slider } from "@/components/ui/slider";
 
 type WorksheetType = "grid" | "underline";
 
@@ -52,6 +53,7 @@ export default function Home() {
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [isBrowserSpeaking, setIsBrowserSpeaking] = useState(false);
   const [currentlySpeakingIndex, setCurrentlySpeakingIndex] = useState<number | null>(null);
+  const [speechRate, setSpeechRate] = useState(0.8);
 
   const [aiConfig, setAiConfig] = useState({
     gradeLevel: "1",
@@ -120,7 +122,7 @@ export default function Home() {
         utterance.voice = voice;
     }
     utterance.lang = voice?.lang || (isKorean ? 'ko-KR' : 'en-US');
-    utterance.rate = 0.8;
+    utterance.rate = speechRate;
     
     utterance.onstart = () => {
         setIsBrowserSpeaking(true);
@@ -442,13 +444,26 @@ export default function Home() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="h-6 w-6" />
-                받아쓰기 문장 목록
-              </CardTitle>
-              <CardDescription>
-                총 {sentences.length}개의 문장이 있습니다.
-              </CardDescription>
+              <div className="flex justify-between items-center">
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="h-6 w-6" />
+                  받아쓰기 문장 목록
+                </CardTitle>
+                <CardDescription>
+                  총 {sentences.length}개
+                </CardDescription>
+              </div>
+               <div className="space-y-2 pt-4">
+                  <Label htmlFor="speech-rate">기본 음성 속도 조절</Label>
+                  <Slider
+                    id="speech-rate"
+                    min={0.5}
+                    max={1.5}
+                    step={0.1}
+                    value={[speechRate]}
+                    onValueChange={(value) => setSpeechRate(value[0])}
+                  />
+                </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4 mb-4 border-b pb-4">
