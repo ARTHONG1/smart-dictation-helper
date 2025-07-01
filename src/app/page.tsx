@@ -39,14 +39,13 @@ import WorksheetPreview from "@/components/worksheet-preview";
 
 type WorksheetType = "grid" | "underline";
 
-const AUDIO_CACHE_KEY = 'audioCache';
-
 export default function Home() {
   const { toast } = useToast();
   const [sentences, setSentences] = useState<string[]>([]);
   const [manualInput, setManualInput] = useState("");
-  const [audioCache, setAudioCache] = useState<Record<string, string>>({});
-  const [fetchingSentences, setFetchingSentences] = useState<Set<string>>(new Set());
+  
+  const [combinedAudio, setCombinedAudio] = useState<string | null>(null);
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
 
   const [aiConfig, setAiConfig] = useState({
     gradeLevel: "1",
@@ -66,15 +65,8 @@ export default function Home() {
   const [isEnglishLoading, setIsEnglishLoading] = useState(false);
 
   useEffect(() => {
-    try {
-      const storedCache = localStorage.getItem(AUDIO_CACHE_KEY);
-      if (storedCache) {
-        setAudioCache(JSON.parse(storedCache));
-      }
-    } catch (error) {
-      console.error("Failed to load audio cache from localStorage", error);
-    }
-  }, []);
+    setCombinedAudio(null);
+  }, [sentences]);
 
   const handleSentenceChange = (index: number, value: string) => {
     if (value.length > 11) {
@@ -114,70 +106,43 @@ export default function Home() {
   const handleDeleteSentence = (index: number) => {
     setSentences((prev) => prev.filter((_, i) => i !== index));
   };
+  
+  const handleGenerateCombinedAudio = async () => {
+    if (!sentences.length || isGeneratingAudio) return;
 
-  const handlePlayAudio = async (sentence: string) => {
-    if (fetchingSentences.has(sentence)) return;
-  
-    if (audioCache[sentence]) {
-      const audio = new Audio(audioCache[sentence]);
-      audio.play().catch(e => {
-        console.error("Error playing audio:", e);
-        toast({
-          variant: "destructive",
-          title: "오디오 재생 오류",
-          description: "오디오 파일을 재생할 수 없습니다."
-        });
-      });
-      return;
-    }
-  
-    setFetchingSentences(prev => new Set(prev).add(sentence));
+    setIsGeneratingAudio(true);
+    setCombinedAudio(null);
+    
     try {
-      const result = await getAudioForSentence(sentence);
-      if (result.success && result.audioData) {
-        const audio = new Audio(result.audioData);
-        audio.play().catch(e => {
-          console.error("Error playing audio:", e);
-          toast({
-            variant: "destructive",
-            title: "오디오 재생 오류",
-            description: "오디오 파일을 재생할 수 없습니다."
-          });
-        });
+      const combinedText = sentences.join('\n\n');
+      const result = await getAudioForSentence(combinedText);
 
-        setAudioCache(prevCache => {
-          const newCache = { ...prevCache, [sentence]: result.audioData! };
-          try {
-            localStorage.setItem(AUDIO_CACHE_KEY, JSON.stringify(newCache));
-          } catch (error) {
-            console.error("Failed to save audio cache to localStorage", error);
-          }
-          return newCache;
+      if (result.success && result.audioData) {
+        setCombinedAudio(result.audioData);
+        toast({
+          title: "성공",
+          description: "전체 문장 음성을 성공적으로 생성했습니다!",
         });
       } else {
         let description = result.error || "알 수 없는 오류로 오디오를 생성할 수 없습니다.";
-        if (description.includes("429")) {
-            description = "요청 횟수 제한을 초과했습니다. 잠시 후 다시 시도해주세요. (무료 등급은 1분/하루 요청 횟수가 제한됩니다)";
+        if (description && description.includes("429")) {
+            description = "요청 횟수 제한을 초과했습니다. 잠시 후 다시 시도해주세요. (하루 무료 생성 횟수는 제한적입니다)";
         }
         toast({
           variant: "destructive",
           title: "오디오 생성 오류",
-          description,
+          description: description,
         });
       }
     } catch (error) {
-      console.error("Audio generation/playback error:", error);
+      console.error("Combined audio generation error:", error);
       toast({
         variant: "destructive",
         title: "오디오 생성 오류",
-        description: "오디오를 생성하는 중 문제가 발생했습니다.",
+        description: "음성을 생성하는 중 문제가 발생했습니다.",
       });
     } finally {
-      setFetchingSentences(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(sentence);
-        return newSet;
-      });
+      setIsGeneratingAudio(false);
     }
   };
 
@@ -405,59 +370,70 @@ export default function Home() {
                 총 {sentences.length}개의 문장이 있습니다.
               </CardDescription>
             </CardHeader>
-            <CardContent className="max-h-60 overflow-y-auto pr-2">
-              <div className="space-y-2">
-                {sentences.length > 0 ? (
-                  sentences.map((sentence, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-muted-foreground w-8 text-center">
-                        {index + 1}.
-                      </span>
-                      <Input
-                        value={sentence}
-                        onChange={(e) =>
-                          handleSentenceChange(index, e.target.value)
-                        }
-                        className="flex-grow"
-                      />
-                      {audioCache[sentence] ? (
+            <CardContent>
+              <div className="space-y-4 mb-4 border-b pb-4">
+                  <Button
+                      onClick={handleGenerateCombinedAudio}
+                      disabled={isGeneratingAudio || sentences.length === 0}
+                      className="w-full"
+                  >
+                      {isGeneratingAudio ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Volume2 className="mr-2 h-4 w-4" />}
+                      전체 문장 음성 생성
+                  </Button>
+                  {combinedAudio && (
+                      <div className="flex items-center gap-2">
+                          <audio controls src={combinedAudio} className="w-full h-10">
+                            오디오를 지원하지 않는 브라우저입니다.
+                          </audio>
+                          <Button
+                              onClick={() => {
+                                  const link = document.createElement('a');
+                                  link.href = combinedAudio;
+                                  link.download = '받아쓰기_음성.wav';
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                              }}
+                              variant="outline"
+                              size="icon"
+                              title="음성 파일 다운로드"
+                          >
+                              <DownloadCloud className="h-4 w-4" />
+                          </Button>
+                      </div>
+                  )}
+              </div>
+              <div className="max-h-60 overflow-y-auto pr-2">
+                <div className="space-y-2">
+                  {sentences.length > 0 ? (
+                    sentences.map((sentence, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-muted-foreground w-8 text-center">
+                          {index + 1}.
+                        </span>
+                        <Input
+                          value={sentence}
+                          onChange={(e) =>
+                            handleSentenceChange(index, e.target.value)
+                          }
+                          className="flex-grow"
+                        />
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handlePlayAudio(sentence)}
-                          title="문장 듣기"
+                          onClick={() => handleDeleteSentence(index)}
+                          title="문장 삭제"
                         >
-                          <Volume2 className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                      ) : fetchingSentences.has(sentence) ? (
-                        <Button variant="ghost" size="icon" disabled title="음성 생성 중...">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handlePlayAudio(sentence)}
-                          title="음성 생성하기"
-                        >
-                          <DownloadCloud className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteSentence(index)}
-                        title="문장 삭제"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-center text-muted-foreground py-4">
-                    문장을 추가해주세요.
-                  </p>
-                )}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-center text-muted-foreground py-4">
+                      문장을 추가해주세요.
+                    </p>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -486,3 +462,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
