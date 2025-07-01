@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -63,12 +63,18 @@ export default function WorksheetPreview({
     } else {
       return Math.floor(10 / linesPerSentence) || 1;
     }
-  }, [worksheetConfig, sentences.length]);
+  }, [worksheetConfig]);
 
   const totalPages = useMemo(() => {
     if (sentences.length === 0) return 1;
     return Math.ceil(sentences.length / sentencesPerPage) || 1;
   }, [sentences.length, sentencesPerPage]);
+  
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const startIndex = useMemo(
     () => (currentPage - 1) * sentencesPerPage,
@@ -76,12 +82,9 @@ export default function WorksheetPreview({
   );
 
   const currentSentences = useMemo(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
     const endIndex = startIndex + sentencesPerPage;
     return sentences.slice(startIndex, endIndex);
-  }, [currentPage, sentences, sentencesPerPage, totalPages, startIndex]);
+  }, [sentences, startIndex, sentencesPerPage]);
 
   const handlePageChange = (direction: "next" | "prev") => {
     setCurrentPage((prevPage) => {
