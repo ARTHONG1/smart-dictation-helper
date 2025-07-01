@@ -466,38 +466,6 @@ export default function Home() {
                 </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4 mb-4 border-b pb-4">
-                  <Button
-                      onClick={handleGenerateCombinedAudio}
-                      disabled={isGeneratingAudio || sentences.length === 0}
-                      className="w-full"
-                  >
-                      {isGeneratingAudio ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Volume2 className="mr-2 h-4 w-4" />}
-                      고급) 고품질 전체 문장 음성 생성
-                  </Button>
-                  {combinedAudio && (
-                      <div className="flex flex-col items-center gap-2">
-                          <audio controls src={combinedAudio} className="w-full h-10">
-                            오디오를 지원하지 않는 브라우저입니다.
-                          </audio>
-                           <Button
-                              onClick={() => {
-                                  const link = document.createElement('a');
-                                  link.href = combinedAudio;
-                                  link.download = '받아쓰기_음성.wav';
-                                  document.body.appendChild(link);
-                                  link.click();
-                                  document.body.removeChild(link);
-                              }}
-                              variant="outline"
-                              className="w-full"
-                          >
-                              <DownloadCloud className="mr-2 h-4 w-4" />
-                              음성 파일 다운로드 (.wav)
-                          </Button>
-                      </div>
-                  )}
-              </div>
               <div className="max-h-60 overflow-y-auto pr-2">
                 <div className="space-y-2">
                   {sentences.length > 0 ? (
