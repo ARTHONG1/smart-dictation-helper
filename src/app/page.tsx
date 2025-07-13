@@ -11,10 +11,9 @@ import {
   Volume2,
   RefreshCw,
   Globe,
-  DownloadCloud,
   Square,
 } from "lucide-react";
-import { getAiSentences, getAudioForSentence, getEnglishAiSentences } from "./actions";
+import { getAiSentences, getEnglishAiSentences } from "./actions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -46,9 +45,6 @@ export default function Home() {
   const [sentences, setSentences] = useState<string[]>([]);
   const [manualInput, setManualInput] = useState("");
   
-  const [combinedAudio, setCombinedAudio] = useState<string | null>(null);
-  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
-
   // Browser TTS states
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [isBrowserSpeaking, setIsBrowserSpeaking] = useState(false);
@@ -73,7 +69,6 @@ export default function Home() {
   const [isEnglishLoading, setIsEnglishLoading] = useState(false);
 
   useEffect(() => {
-    setCombinedAudio(null);
     if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
       window.speechSynthesis.cancel();
       setIsBrowserSpeaking(false);
@@ -183,45 +178,6 @@ export default function Home() {
     setSentences((prev) => prev.filter((_, i) => i !== index));
   };
   
-  const handleGenerateCombinedAudio = async () => {
-    if (!sentences.length || isGeneratingAudio) return;
-
-    setIsGeneratingAudio(true);
-    setCombinedAudio(null);
-    
-    try {
-      const combinedText = sentences.join('\n\n');
-      const result = await getAudioForSentence(combinedText);
-
-      if (result.success && result.audioData) {
-        setCombinedAudio(result.audioData);
-        toast({
-          title: "성공",
-          description: "고품질 전체 문장 음성을 성공적으로 생성했습니다!",
-        });
-      } else {
-        let description = result.error || "알 수 없는 오류로 오디오를 생성할 수 없습니다.";
-        if (description && description.includes("429")) {
-            description = "요청 횟수 제한을 초과했습니다. 잠시 후 다시 시도해주세요. (하루 무료 생성 횟수는 제한적입니다)";
-        }
-        toast({
-          variant: "destructive",
-          title: "오디오 생성 오류",
-          description: description,
-        });
-      }
-    } catch (error) {
-      console.error("Combined audio generation error:", error);
-      toast({
-        variant: "destructive",
-        title: "오디오 생성 오류",
-        description: "음성을 생성하는 중 문제가 발생했습니다.",
-      });
-    } finally {
-      setIsGeneratingAudio(false);
-    }
-  };
-
   const handleAiGenerate = async () => {
     setIsLoading(true);
     const result = await getAiSentences({
@@ -276,7 +232,6 @@ export default function Home() {
     setCurrentlySpeakingIndex(null);
     setSentences([]);
     setManualInput('');
-    setCombinedAudio(null);
     setAiConfig({
       gradeLevel: "1",
       dictationGoal: "",
