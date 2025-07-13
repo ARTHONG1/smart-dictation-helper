@@ -5,3 +5,7 @@ runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
+retentionPolicy:
+  # Keep the 5 most recent versions of the container image.
+  # Older versions will be automatically deleted to save on storage costs.
+  keepCount: 5
