@@ -6,6 +6,6 @@ runConfig:
   # more instances in response to increased traffic.
   maxInstances: 1
 retentionPolicy:
-  # Keep the 2 most recent versions of the container image.
+  # Keep the 1 most recent version of the container image.
   # Older versions will be automatically deleted to save on storage costs.
-  keepCount: 2
+  keepCount: 1
