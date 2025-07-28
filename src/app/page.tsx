@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Sparkles,
   Pencil,
@@ -12,8 +12,9 @@ import {
   RefreshCw,
   Globe,
   Square,
+  FileAudio,
 } from "lucide-react";
-import { getAiSentences, getEnglishAiSentences } from "./actions";
+import { getAiSentences, getEnglishAiSentences, getAudioForSentence } from "./actions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -50,6 +51,11 @@ export default function Home() {
   const [isBrowserSpeaking, setIsBrowserSpeaking] = useState(false);
   const [currentlySpeakingIndex, setCurrentlySpeakingIndex] = useState<number | null>(null);
   const [speechRate, setSpeechRate] = useState(0.8);
+  
+  // AI Audio states
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
 
   const [aiConfig, setAiConfig] = useState({
     gradeLevel: "1",
@@ -72,8 +78,12 @@ export default function Home() {
     if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
       window.speechSynthesis.cancel();
       setIsBrowserSpeaking(false);
-      setCurrentlySpeakingIndex(null);
     }
+    if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+    }
+    setCurrentlySpeakingIndex(null);
   }, [sentences]);
 
   useEffect(() => {
@@ -86,57 +96,103 @@ export default function Home() {
     loadVoices();
     return () => {
         window.speechSynthesis.onvoiceschanged = null;
+        if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
+          window.speechSynthesis.cancel();
+        }
+        if (audioRef.current) {
+          audioRef.current.pause();
+        }
     };
   }, []);
 
-  const handleBrowserSpeech = (text: string, index: number) => {
-    if (!('speechSynthesis' in window)) {
-        toast({ variant: 'destructive', title: '오류', description: '이 브라우저에서는 음성 합성을 지원하지 않습니다.' });
-        return;
+  const playAudio = (audioDataUrl: string, index: number) => {
+    if (audioRef.current) {
+      if (currentlySpeakingIndex === index && !audioRef.current.paused) {
+          audioRef.current.pause();
+          setCurrentlySpeakingIndex(null);
+          return;
+      }
+      audioRef.current.src = audioDataUrl;
+      audioRef.current.play().catch(e => {
+        console.error("Audio play failed", e);
+        toast({ variant: 'destructive', title: '오디오 재생 실패', description: '오디오를 재생할 수 없습니다.' });
+      });
+      setCurrentlySpeakingIndex(index);
+      audioRef.current.onended = () => {
+        setCurrentlySpeakingIndex(null);
+      };
+       audioRef.current.onpause = () => {
+        if(audioRef.current?.ended === false) { // paused by user
+           setCurrentlySpeakingIndex(null);
+        }
+      };
     }
+  };
 
-    if (isBrowserSpeaking && currentlySpeakingIndex === index) {
-        window.speechSynthesis.cancel();
-        setIsBrowserSpeaking(false);
+  const handleAiAudio = async (text: string, index: number) => {
+    setIsGeneratingAudio(index);
+    try {
+        const result = await getAudioForSentence(text);
+        if (result.success && result.audioData) {
+            playAudio(result.audioData, index);
+        } else {
+            toast({ variant: 'destructive', title: 'AI 음성 생성 오류', description: result.error });
+        }
+    } catch (e) {
+        console.error(e);
+        toast({ variant: 'destructive', title: '오류', description: 'AI 음성 생성 중 문제가 발생했습니다.' });
+    } finally {
+        setIsGeneratingAudio(null);
+    }
+  };
+
+  const handleUnifiedSpeech = (text: string, index: number) => {
+    // Stop any currently playing audio
+    if (isBrowserSpeaking) window.speechSynthesis.cancel();
+    if (audioRef.current) audioRef.current.pause();
+
+    // If clicking the currently playing item, just stop it.
+    if (currentlySpeakingIndex === index) {
         setCurrentlySpeakingIndex(null);
         return;
     }
-    
-    if (window.speechSynthesis.speaking) {
-        window.speechSynthesis.cancel();
+
+    if ('speechSynthesis' in window && window.speechSynthesis.getVoices().length > 0) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        const isKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(text);
+        const targetLang = isKorean ? 'ko' : 'en';
+
+        const voice = availableVoices.find(v => v.lang.startsWith(targetLang) && v.name.includes('Google')) ||
+                      availableVoices.find(v => v.lang.startsWith(targetLang));
+        
+        if (voice) {
+            utterance.voice = voice;
+        }
+        utterance.lang = voice?.lang || (isKorean ? 'ko-KR' : 'en-US');
+        utterance.rate = speechRate;
+        
+        utterance.onstart = () => {
+            setIsBrowserSpeaking(true);
+            setCurrentlySpeakingIndex(index);
+        };
+
+        utterance.onend = () => {
+            setIsBrowserSpeaking(false);
+            setCurrentlySpeakingIndex(null);
+        };
+
+        utterance.onerror = (event) => {
+            console.error('SpeechSynthesisUtterance.onerror, falling back to AI audio.', event);
+            setIsBrowserSpeaking(false);
+            setCurrentlySpeakingIndex(null);
+            handleAiAudio(text, index); // Fallback to AI audio
+        };
+        
+        window.speechSynthesis.speak(utterance);
+    } else {
+        // Fallback to AI audio if browser TTS is not supported
+        handleAiAudio(text, index);
     }
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    const isKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(text);
-    const targetLang = isKorean ? 'ko' : 'en';
-
-    const voice = availableVoices.find(v => v.lang.startsWith(targetLang) && v.name.includes('Google')) ||
-                  availableVoices.find(v => v.lang.startsWith(targetLang));
-    
-    if (voice) {
-        utterance.voice = voice;
-    }
-    utterance.lang = voice?.lang || (isKorean ? 'ko-KR' : 'en-US');
-    utterance.rate = speechRate;
-    
-    utterance.onstart = () => {
-        setIsBrowserSpeaking(true);
-        setCurrentlySpeakingIndex(index);
-    };
-
-    utterance.onend = () => {
-        setIsBrowserSpeaking(false);
-        setCurrentlySpeakingIndex(null);
-    };
-
-    utterance.onerror = (event) => {
-        console.error('SpeechSynthesisUtterance.onerror', event);
-        toast({ variant: 'destructive', title: '음성 재생 오류', description: '기본 음성을 재생하는 중 오류가 발생했습니다.' });
-        setIsBrowserSpeaking(false);
-        setCurrentlySpeakingIndex(null);
-    };
-    
-    window.speechSynthesis.speak(utterance);
   };
 
   const handleSentenceChange = (index: number, value: string) => {
@@ -228,6 +284,9 @@ export default function Home() {
     if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
       window.speechSynthesis.cancel();
     }
+    if (audioRef.current) {
+        audioRef.current.pause();
+    }
     setIsBrowserSpeaking(false);
     setCurrentlySpeakingIndex(null);
     setSentences([]);
@@ -248,6 +307,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen w-full bg-background p-4 sm:p-6 lg:p-8">
+      <audio ref={audioRef} className="hidden" />
       <header className="text-center mb-8">
         <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold text-primary-foreground">
           우리반 AI 받아쓰기
@@ -274,7 +334,7 @@ export default function Home() {
                   <CardTitle>AI 자동 생성 옵션</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="grade">학년</Label>
                       <Select
@@ -355,7 +415,7 @@ export default function Home() {
                     />
                   </div>
                 </CardContent>
-                <CardFooter className="flex flex-col gap-2">
+                <CardFooter className="flex flex-col sm:flex-row gap-2">
                   <Button onClick={handleAiGenerate} disabled={isLoading || isEnglishLoading} className="w-full">
                     {isLoading ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -439,11 +499,13 @@ export default function Home() {
                          <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleBrowserSpeech(sentence, index)}
-                            title={isBrowserSpeaking && currentlySpeakingIndex === index ? "재생 중지" : "기본 음성으로 듣기"}
-                            disabled={isBrowserSpeaking && currentlySpeakingIndex !== index}
+                            onClick={() => handleUnifiedSpeech(sentence, index)}
+                            title="음성 듣기"
+                            disabled={isGeneratingAudio !== null && isGeneratingAudio !== index}
                           >
-                            {isBrowserSpeaking && currentlySpeakingIndex === index ? (
+                           {isGeneratingAudio === index ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : currentlySpeakingIndex === index ? (
                                 <Square className="h-4 w-4 text-primary" />
                             ) : (
                                 <Volume2 className="h-4 w-4" />
