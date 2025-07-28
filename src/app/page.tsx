@@ -13,6 +13,7 @@ import {
   Globe,
   Square,
   FileAudio,
+  Download,
 } from "lucide-react";
 import { getAiSentences, getEnglishAiSentences, getAudioForSentence } from "./actions";
 import { Button } from "@/components/ui/button";
@@ -194,6 +195,28 @@ export default function Home() {
         handleAiAudio(text, index);
     }
   };
+
+  // 다운로드 함수 추가
+  const handleDownloadAudio = async (audioDataUrl: string, sentence: string) => {
+    try {
+      const response = await fetch(audioDataUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      // 파일 이름 설정 (예: 받아쓰기_문장_1.wav)
+      const fileName = `받아쓰기_${sentence.substring(0, Math.min(sentence.length, 10))}.wav`; // 문장 앞부분 최대 10자 사용
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Audio download failed:", error);
+      toast({ variant: 'destructive', title: '다운로드 실패', description: '오디오 파일 다운로드 중 문제가 발생했습니다.' });
+    }
+  };
+
 
   const handleSentenceChange = (index: number, value: string) => {
     if (value.length > 11) {
@@ -511,6 +534,34 @@ export default function Home() {
                                 <Volume2 className="h-4 w-4" />
                             )}
                           </Button>
+                        {/* 다운로드 버튼 추가 */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={async () => {
+                            // AI 음성 생성 및 다운로드
+                            setIsGeneratingAudio(index); // 다운로드 중 로딩 표시
+                            try {
+                                const result = await getAudioForSentence(sentence);
+                                if (result.success && result.audioData) {
+                                    await handleDownloadAudio(result.audioData, sentence);
+                                } else {
+                                    toast({ variant: 'destructive', title: 'AI 음성 생성 오류', description: result.error });
+                                }
+                            } catch (e) {
+                                console.error(e);
+                                toast({ variant: 'destructive', title: '오류', description: '오디오 생성 및 다운로드 중 문제가 발생했습니다.' });
+                            }
+                          }} // removed finally block to keep loader active on error. If needed, add it back with setIsGeneratingAudio(null) in both try and catch
+                          title="음성 파일 다운로드"
+                          disabled={isGeneratingAudio !== null} // 음성 생성 중에는 다운로드 비활성화
+                        >
+                          {isGeneratingAudio === index ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                              <Download className="h-4 w-4" />
+                          )}
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
