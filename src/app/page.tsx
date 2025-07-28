@@ -55,6 +55,7 @@ export default function Home() {
   
   // AI Audio states
   const [isGeneratingAudio, setIsGeneratingAudio] = useState<number | null>(null);
+  const [isDownloading, setIsDownloading] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
 
@@ -196,16 +197,14 @@ export default function Home() {
     }
   };
 
-  // 다운로드 함수 추가
-  const handleDownloadAudio = async (audioDataUrl: string, sentence: string) => {
+  const handleDownloadAudioFile = async (audioDataUrl: string, sentence: string) => {
     try {
       const response = await fetch(audioDataUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      // 파일 이름 설정 (예: 받아쓰기_문장_1.wav)
-      const fileName = `받아쓰기_${sentence.substring(0, Math.min(sentence.length, 10))}.wav`; // 문장 앞부분 최대 10자 사용
+      const fileName = `받아쓰기_${sentence.substring(0, Math.min(sentence.length, 10))}.wav`;
       link.download = fileName;
       document.body.appendChild(link);
       link.click();
@@ -214,6 +213,31 @@ export default function Home() {
     } catch (error) {
       console.error("Audio download failed:", error);
       toast({ variant: 'destructive', title: '다운로드 실패', description: '오디오 파일 다운로드 중 문제가 발생했습니다.' });
+    }
+  };
+
+  const handleDownloadAction = async (sentence: string, index: number) => {
+    setIsDownloading(index);
+    try {
+      const result = await getAudioForSentence(sentence);
+      if (result.success && result.audioData) {
+        await handleDownloadAudioFile(result.audioData, sentence);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'AI 음성 생성 오류',
+          description: result.error,
+        });
+      }
+    } catch (e) {
+      console.error(e);
+      toast({
+        variant: 'destructive',
+        title: '오류',
+        description: '오디오 생성 및 다운로드 중 문제가 발생했습니다.',
+      });
+    } finally {
+      setIsDownloading(null);
     }
   };
 
@@ -524,7 +548,7 @@ export default function Home() {
                             size="icon"
                             onClick={() => handleUnifiedSpeech(sentence, index)}
                             title="음성 듣기"
-                            disabled={isGeneratingAudio !== null && isGeneratingAudio !== index}
+                            disabled={isGeneratingAudio !== null || isDownloading !== null}
                           >
                            {isGeneratingAudio === index ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -534,29 +558,14 @@ export default function Home() {
                                 <Volume2 className="h-4 w-4" />
                             )}
                           </Button>
-                        {/* 다운로드 버튼 추가 */}
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={async () => {
-                            // AI 음성 생성 및 다운로드
-                            setIsGeneratingAudio(index); // 다운로드 중 로딩 표시
-                            try {
-                                const result = await getAudioForSentence(sentence);
-                                if (result.success && result.audioData) {
-                                    await handleDownloadAudio(result.audioData, sentence);
-                                } else {
-                                    toast({ variant: 'destructive', title: 'AI 음성 생성 오류', description: result.error });
-                                }
-                            } catch (e) {
-                                console.error(e);
-                                toast({ variant: 'destructive', title: '오류', description: '오디오 생성 및 다운로드 중 문제가 발생했습니다.' });
-                            }
-                          }} // removed finally block to keep loader active on error. If needed, add it back with setIsGeneratingAudio(null) in both try and catch
+                          onClick={() => handleDownloadAction(sentence, index)}
                           title="음성 파일 다운로드"
-                          disabled={isGeneratingAudio !== null} // 음성 생성 중에는 다운로드 비활성화
+                          disabled={isDownloading !== null || isGeneratingAudio !== null}
                         >
-                          {isGeneratingAudio === index ? (
+                          {isDownloading === index ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                               <Download className="h-4 w-4" />
@@ -567,6 +576,7 @@ export default function Home() {
                           size="icon"
                           onClick={() => handleDeleteSentence(index)}
                           title="문장 삭제"
+                          disabled={isDownloading !== null || isGeneratingAudio !== null}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
