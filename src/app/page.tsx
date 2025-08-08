@@ -151,47 +151,46 @@ export default function Home() {
     // Stop any currently playing audio
     if (isBrowserSpeaking) window.speechSynthesis.cancel();
     if (audioRef.current) audioRef.current.pause();
-
+  
     // If clicking the currently playing item, just stop it.
     if (currentlySpeakingIndex === index) {
-        setCurrentlySpeakingIndex(null);
-        return;
+      setCurrentlySpeakingIndex(null);
+      return;
     }
-
+  
     const isKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(text);
     const targetLang = isKorean ? 'ko' : 'en';
     const voice = availableVoices.find(v => v.lang.startsWith(targetLang));
-
+  
     if ('speechSynthesis' in window && voice) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        
-        utterance.voice = voice;
-        utterance.lang = voice.lang;
-        utterance.rate = speechRate;
-        
-        utterance.onstart = () => {
-            setIsBrowserSpeaking(true);
-            setCurrentlySpeakingIndex(index);
-        };
-
-        utterance.onend = () => {
-            setIsBrowserSpeaking(false);
-            setCurrentlySpeakingIndex(null);
-        };
-
-        utterance.onerror = (event) => {
-            console.error('SpeechSynthesisUtterance.onerror, falling back to AI audio.', event);
-            setIsBrowserSpeaking(false);
-            setCurrentlySpeakingIndex(null);
-            handleAiAudio(text, index); // Fallback to AI audio on error
-        };
-        
-        window.speechSynthesis.speak(utterance);
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.voice = voice;
+      utterance.lang = voice.lang;
+      utterance.rate = speechRate;
+  
+      utterance.onstart = () => {
+        setIsBrowserSpeaking(true);
+        setCurrentlySpeakingIndex(index);
+      };
+  
+      utterance.onend = () => {
+        setIsBrowserSpeaking(false);
+        setCurrentlySpeakingIndex(null);
+      };
+  
+      utterance.onerror = (event) => {
+        setIsBrowserSpeaking(false);
+        setCurrentlySpeakingIndex(null);
+        handleAiAudio(text, index); // Fallback to AI audio on error
+      };
+  
+      window.speechSynthesis.speak(utterance);
     } else {
-        // Fallback to AI audio if browser TTS is not supported or no voice found
-        handleAiAudio(text, index);
+      // Fallback to AI audio if browser TTS is not supported or no voice found
+      handleAiAudio(text, index);
     }
   };
+  
 
   const handleDownloadAudioFile = async (audioDataUrl: string, sentence: string) => {
     try {
@@ -473,7 +472,7 @@ export default function Home() {
                     ) : (
                       <Globe className="mr-2 h-4 w-4" />
                     )}
-                    영어 특화 AI 문장 자동 생성
+                    영어 AI 문장 자동 생성
                   </Button>
                 </CardFooter>
               </Card>
@@ -612,7 +611,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
-
-    
