@@ -523,7 +523,7 @@ export default function Home() {
                 </div>
             </CardHeader>
             <CardContent>
-              <div className="max-h-60 overflow-y-auto pr-2">
+              <div className="max-h-60 overflow-y-auto">
                 <div className="space-y-2">
                   {sentences.length > 0 ? (
                     sentences.map((sentence, index) => (
