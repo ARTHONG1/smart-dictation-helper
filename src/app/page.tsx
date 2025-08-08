@@ -149,14 +149,21 @@ export default function Home() {
 
   const handleUnifiedSpeech = (text: string, index: number) => {
     // Stop any currently playing audio
-    if (isBrowserSpeaking) window.speechSynthesis.cancel();
-    if (audioRef.current) audioRef.current.pause();
+    if (isBrowserSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsBrowserSpeaking(false);
+    }
+    if (audioRef.current?.paused === false) {
+      audioRef.current.pause();
+    }
   
     // If clicking the currently playing item, just stop it.
     if (currentlySpeakingIndex === index) {
       setCurrentlySpeakingIndex(null);
       return;
     }
+    
+    setCurrentlySpeakingIndex(index);
   
     const isKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(text);
     const targetLang = isKorean ? 'ko' : 'en';
@@ -170,7 +177,6 @@ export default function Home() {
   
       utterance.onstart = () => {
         setIsBrowserSpeaking(true);
-        setCurrentlySpeakingIndex(index);
       };
   
       utterance.onend = () => {
@@ -178,7 +184,7 @@ export default function Home() {
         setCurrentlySpeakingIndex(null);
       };
   
-      utterance.onerror = (event) => {
+      utterance.onerror = () => {
         setIsBrowserSpeaking(false);
         setCurrentlySpeakingIndex(null);
         handleAiAudio(text, index); // Fallback to AI audio on error
@@ -431,7 +437,7 @@ export default function Home() {
                     <Label htmlFor="english-goal">영어 받아쓰기 목표</Label>
                     <Input
                       id="english-goal"
-                      placeholder="예: phonics, sight words"
+                      placeholder="예: phonics, sight words, 행복"
                       value={aiConfig.englishDictationGoal}
                       onChange={(e) =>
                         setAiConfig({ ...aiConfig, englishDictationGoal: e.target.value })
@@ -523,7 +529,7 @@ export default function Home() {
                 </div>
             </CardHeader>
             <CardContent>
-              <div className="max-h-60 overflow-y-auto">
+              <div className="max-h-96 overflow-y-auto">
                 <div className="space-y-2">
                   {sentences.length > 0 ? (
                     sentences.map((sentence, index) => (
@@ -542,10 +548,10 @@ export default function Home() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleUnifiedSpeech(sentence, index)}
-                            title="음성 듣기 (무료 브라우저 TTS 우선 사용)"
-                            disabled={isDownloading !== null || (isGeneratingAudio !== null && isGeneratingAudio !== index)}
+                            title="음성 듣기 (브라우저 TTS)"
+                            disabled={(isDownloading !== null) || (isGeneratingAudio !== null && isGeneratingAudio !== index) || (isBrowserSpeaking && currentlySpeakingIndex !== index)}
                           >
-                           {isGeneratingAudio === index ? (
+                           {(isGeneratingAudio === index) ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                             ) : currentlySpeakingIndex === index ? (
                                 <Square className="h-4 w-4 text-primary" />
@@ -557,8 +563,8 @@ export default function Home() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDownloadAction(sentence, index)}
-                          title="AI 음성 다운로드 (유료)"
-                          disabled={isDownloading !== null || isGeneratingAudio !== null}
+                          title="AI 음성 다운로드"
+                          disabled={isDownloading !== null || isGeneratingAudio !== null || isBrowserSpeaking}
                         >
                           {isDownloading === index ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
@@ -571,7 +577,7 @@ export default function Home() {
                           size="icon"
                           onClick={() => handleDeleteSentence(index)}
                           title="문장 삭제"
-                          disabled={isDownloading !== null || isGeneratingAudio !== null}
+                          disabled={isDownloading !== null || isGeneratingAudio !== null || currentlySpeakingIndex !== null}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
