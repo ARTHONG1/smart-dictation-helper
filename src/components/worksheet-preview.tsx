@@ -200,7 +200,62 @@ export default function WorksheetPreview({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>최종 학습지 미리보기</CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle>최종 학습지 미리보기</CardTitle>
+          <div className="flex items-center gap-2">
+          {sentences.length > 0 && (
+              <div className="flex items-center justify-center">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handlePageChange("prev")}
+                  disabled={currentPage === 1}
+                  className="h-8 w-8"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="font-mono text-sm mx-2">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handlePageChange("next")}
+                  disabled={currentPage === totalPages}
+                  className="h-8 w-8"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+             <Button
+                onClick={() => handleDownload("pdf")}
+                disabled={isDownloading !== false || sentences.length === 0}
+                size="sm"
+                variant="outline"
+              >
+                {isDownloading === "pdf" ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <FileText className="mr-2 h-4 w-4" />
+                )}
+                PDF
+              </Button>
+              <Button
+                onClick={() => handleDownload("image")}
+                disabled={isDownloading !== false || sentences.length === 0}
+                size="sm"
+                variant="outline"
+              >
+                {isDownloading === "image" ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <ImageIcon className="mr-2 h-4 w-4" />
+                )}
+                이미지
+              </Button>
+          </div>
+        </div>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4">
           <div>
             <Label className="font-semibold">학습지 형태</Label>
@@ -274,56 +329,8 @@ export default function WorksheetPreview({
             </div>
         )}
       </CardContent>
-      <CardFooter className="flex flex-col gap-4 pt-6">
-        {sentences.length > 0 && (
-          <div className="flex items-center justify-center w-full">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handlePageChange("prev")}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
-            <span className="font-mono text-sm mx-4">
-              {currentPage} / {totalPages}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handlePageChange("next")}
-              disabled={currentPage === totalPages}
-            >
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-          </div>
-        )}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-          <Button
-            onClick={() => handleDownload("pdf")}
-            disabled={isDownloading !== false || sentences.length === 0}
-            className="w-full"
-          >
-            {isDownloading === "pdf" ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <FileText className="mr-2 h-4 w-4" />
-            )}
-            PDF 다운로드
-          </Button>
-          <Button
-            onClick={() => handleDownload("image")}
-            disabled={isDownloading !== false || sentences.length === 0}
-            className="w-full"
-          >
-            {isDownloading === "image" ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <ImageIcon className="mr-2 h-4 w-4" />
-            )}
-            이미지 다운로드
-          </Button>
-        </div>
+      <CardFooter className="pt-6">
+        {/* Footer is now empty as controls moved to header */}
       </CardFooter>
     </Card>
   );
