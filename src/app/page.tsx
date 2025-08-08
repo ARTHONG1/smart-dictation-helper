@@ -12,7 +12,6 @@ import {
   RefreshCw,
   Globe,
   Square,
-  FileAudio,
   Download,
 } from "lucide-react";
 import { getAiSentences, getEnglishAiSentences, getAudioForSentence } from "./actions";
@@ -107,7 +106,7 @@ export default function Home() {
     };
   }, []);
 
-  const playAudio = (audioDataUrl: string, index: number) => {
+  const playAiAudio = (audioDataUrl: string, index: number) => {
     if (audioRef.current) {
       if (currentlySpeakingIndex === index && !audioRef.current.paused) {
           audioRef.current.pause();
@@ -136,7 +135,7 @@ export default function Home() {
     try {
         const result = await getAudioForSentence(text);
         if (result.success && result.audioData) {
-            playAudio(result.audioData, index);
+            playAiAudio(result.audioData, index);
         } else {
             toast({ variant: 'destructive', title: 'AI 음성 생성 오류', description: result.error });
         }
@@ -159,18 +158,15 @@ export default function Home() {
         return;
     }
 
-    if ('speechSynthesis' in window && window.speechSynthesis.getVoices().length > 0) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        const isKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(text);
-        const targetLang = isKorean ? 'ko' : 'en';
+    const isKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(text);
+    const targetLang = isKorean ? 'ko' : 'en';
+    const voice = availableVoices.find(v => v.lang.startsWith(targetLang));
 
-        const voice = availableVoices.find(v => v.lang.startsWith(targetLang) && v.name.includes('Google')) ||
-                      availableVoices.find(v => v.lang.startsWith(targetLang));
+    if ('speechSynthesis' in window && voice) {
+        const utterance = new SpeechSynthesisUtterance(text);
         
-        if (voice) {
-            utterance.voice = voice;
-        }
-        utterance.lang = voice?.lang || (isKorean ? 'ko-KR' : 'en-US');
+        utterance.voice = voice;
+        utterance.lang = voice.lang;
         utterance.rate = speechRate;
         
         utterance.onstart = () => {
@@ -187,12 +183,12 @@ export default function Home() {
             console.error('SpeechSynthesisUtterance.onerror, falling back to AI audio.', event);
             setIsBrowserSpeaking(false);
             setCurrentlySpeakingIndex(null);
-            handleAiAudio(text, index); // Fallback to AI audio
+            handleAiAudio(text, index); // Fallback to AI audio on error
         };
         
         window.speechSynthesis.speak(utterance);
     } else {
-        // Fallback to AI audio if browser TTS is not supported
+        // Fallback to AI audio if browser TTS is not supported or no voice found
         handleAiAudio(text, index);
     }
   };
@@ -432,7 +428,7 @@ export default function Home() {
                       }
                     />
                   </div>
-                  <div>
+                   <div>
                     <Label htmlFor="english-goal">영어 받아쓰기 목표</Label>
                     <Input
                       id="english-goal"
@@ -547,8 +543,8 @@ export default function Home() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleUnifiedSpeech(sentence, index)}
-                            title="음성 듣기"
-                            disabled={isGeneratingAudio !== null || isDownloading !== null}
+                            title="음성 듣기 (무료 브라우저 TTS 우선 사용)"
+                            disabled={isDownloading !== null || (isGeneratingAudio !== null && isGeneratingAudio !== index)}
                           >
                            {isGeneratingAudio === index ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -562,7 +558,7 @@ export default function Home() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDownloadAction(sentence, index)}
-                          title="음성 파일 다운로드"
+                          title="AI 음성 다운로드 (유료)"
                           disabled={isDownloading !== null || isGeneratingAudio !== null}
                         >
                           {isDownloading === index ? (
@@ -616,3 +612,7 @@ export default function Home() {
     </div>
   );
 }
+
+    
+
+    
