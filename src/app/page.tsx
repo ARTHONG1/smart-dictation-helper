@@ -148,7 +148,6 @@ export default function Home() {
   };
 
   const handleUnifiedSpeech = (text: string, index: number) => {
-    // Stop any currently playing audio
     if (isBrowserSpeaking) {
       window.speechSynthesis.cancel();
       setIsBrowserSpeaking(false);
@@ -157,7 +156,6 @@ export default function Home() {
       audioRef.current.pause();
     }
   
-    // If clicking the currently playing item, just stop it.
     if (currentlySpeakingIndex === index) {
       setCurrentlySpeakingIndex(null);
       return;
@@ -187,12 +185,11 @@ export default function Home() {
       utterance.onerror = () => {
         setIsBrowserSpeaking(false);
         setCurrentlySpeakingIndex(null);
-        handleAiAudio(text, index); // Fallback to AI audio on error
+        handleAiAudio(text, index);
       };
   
       window.speechSynthesis.speak(utterance);
     } else {
-      // Fallback to AI audio if browser TTS is not supported or no voice found
       handleAiAudio(text, index);
     }
   };
@@ -480,6 +477,14 @@ export default function Home() {
                     )}
                     영어 AI 문장 자동 생성
                   </Button>
+                   <Button
+                    onClick={handleReset}
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    새로고침
+                  </Button>
                 </CardFooter>
               </Card>
             </TabsContent>
@@ -602,18 +607,6 @@ export default function Home() {
           />
         </div>
       </main>
-
-      <footer className="mt-8 flex justify-center items-center gap-4 max-w-7xl mx-auto">
-        <Button
-          onClick={handleReset}
-          variant="outline"
-          size="lg"
-          className="w-full sm:w-auto"
-        >
-          <RefreshCw className="mr-2 h-4 w-4" />
-          새로고침
-        </Button>
-      </footer>
     </div>
   );
 }
