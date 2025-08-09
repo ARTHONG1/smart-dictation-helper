@@ -148,26 +148,33 @@ export default function Home() {
   };
 
   const handleUnifiedSpeech = (text: string, index: number) => {
-    if (isBrowserSpeaking) {
+    if (isBrowserSpeaking && currentlySpeakingIndex !== index) {
       window.speechSynthesis.cancel();
       setIsBrowserSpeaking(false);
     }
-    if (audioRef.current?.paused === false) {
+    if (audioRef.current?.paused === false && currentlySpeakingIndex !== index) {
       audioRef.current.pause();
     }
   
     if (currentlySpeakingIndex === index) {
+       if (isBrowserSpeaking) {
+        window.speechSynthesis.cancel();
+        setIsBrowserSpeaking(false);
+      }
+      if (audioRef.current?.paused === false) {
+        audioRef.current.pause();
+      }
       setCurrentlySpeakingIndex(null);
       return;
     }
-    
-    setCurrentlySpeakingIndex(index);
   
     const isKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(text);
     const targetLang = isKorean ? 'ko' : 'en';
     const voice = availableVoices.find(v => v.lang.startsWith(targetLang));
   
-    if ('speechSynthesis' in window && voice) {
+    setCurrentlySpeakingIndex(index);
+    
+    if (voice && 'speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.voice = voice;
       utterance.lang = voice.lang;
@@ -182,10 +189,11 @@ export default function Home() {
         setCurrentlySpeakingIndex(null);
       };
   
-      utterance.onerror = () => {
-        setIsBrowserSpeaking(false);
-        setCurrentlySpeakingIndex(null);
-        handleAiAudio(text, index);
+      utterance.onerror = (event) => {
+          console.error('SpeechSynthesisUtterance.onerror, falling back to AI audio.', event);
+          setIsBrowserSpeaking(false);
+          setCurrentlySpeakingIndex(null);
+          handleAiAudio(text, index); // Fallback to AI audio
       };
   
       window.speechSynthesis.speak(utterance);
@@ -353,14 +361,24 @@ export default function Home() {
   return (
     <div className="min-h-screen w-full bg-background p-4 sm:p-6 lg:p-8">
       <audio ref={audioRef} className="hidden" />
-      <header className="text-center mb-8">
-        <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold text-primary-foreground">
-          우리반 AI 받아쓰기
-        </h1>
-        <p className="mt-2 text-muted-foreground text-base sm:text-lg">
-          AI가 받아쓰기 학습지를 자동으로 만들어주고, 또박또박 읽어주는 음성도 함께 제공해요. 선생님의 소중한 시간을 아껴드립니다.
-        </p>
+      <header className="flex justify-between items-center mb-8">
+        <div className="text-left">
+          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold text-primary-foreground">
+            우리반 AI 받아쓰기
+          </h1>
+          <p className="mt-2 text-muted-foreground text-base sm:text-lg">
+            AI가 받아쓰기 학습지를 자동으로 만들어주고, 또박또박 읽어주는 음성도 함께 제공해요. 선생님의 소중한 시간을 아껴드립니다.
+          </p>
+        </div>
+        <Button
+          onClick={handleReset}
+          variant="outline"
+        >
+          <RefreshCw className="mr-2 h-4 w-4" />
+          새로고침
+        </Button>
       </header>
+
 
       <main className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
         <div className="flex flex-col gap-6">
@@ -477,14 +495,6 @@ export default function Home() {
                     )}
                     영어 AI 문장 자동 생성
                   </Button>
-                   <Button
-                    onClick={handleReset}
-                    variant="outline"
-                    className="w-full sm:w-auto"
-                  >
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    새로고침
-                  </Button>
                 </CardFooter>
               </Card>
             </TabsContent>
@@ -553,8 +563,12 @@ export default function Home() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleUnifiedSpeech(sentence, index)}
-                            title="음성 듣기 (브라우저 TTS)"
-                            disabled={(isDownloading !== null) || (isGeneratingAudio !== null && isGeneratingAudio !== index) || (isBrowserSpeaking && currentlySpeakingIndex !== index)}
+                            title="음성 듣기 (브라우저/AI 자동 전환)"
+                            disabled={
+                                (isDownloading !== null && isDownloading !== index) ||
+                                (isGeneratingAudio !== null && isGeneratingAudio !== index) ||
+                                (isBrowserSpeaking && currentlySpeakingIndex !== index)
+                            }
                           >
                            {(isGeneratingAudio === index) ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -568,8 +582,12 @@ export default function Home() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDownloadAction(sentence, index)}
-                          title="AI 음성 다운로드"
-                          disabled={isDownloading !== null || isGeneratingAudio !== null || isBrowserSpeaking}
+                          title="AI 음성 생성 및 파일 다운로드"
+                          disabled={
+                            (isDownloading !== null && isDownloading !== index) ||
+                             (isGeneratingAudio !== null) ||
+                             (currentlySpeakingIndex !== null)
+                          }
                         >
                           {isDownloading === index ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
